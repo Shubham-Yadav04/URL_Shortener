@@ -1,14 +1,19 @@
 package com.example.Url_Shortener.Controller;
 
+import com.example.Url_Shortener.ExceptionHandler.Exceptions.RedirectionException;
 import com.example.Url_Shortener.Modal.UrlMapping;
 import com.example.Url_Shortener.Services.MappingService;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 
 @RestController
+@RequestMapping("mapping")
 public class MappingController {
 
 
@@ -18,25 +23,28 @@ public class MappingController {
         this.mappingService = mappingService;
     }
 
+    @GetMapping("/health-check")
+    public String healthCheck(){
+        return "mapping working";
+    }
     @PostMapping("/shorten/{userId}")
-    public ResponseEntity<UrlMapping> createShortUrl(
+    public ResponseEntity<URL> createShortUrl(
             @PathVariable String userId,
-            @RequestParam URL longUrl) {
-
+            @RequestParam("longUrl") URL longUrl) {
         return ResponseEntity.ok(
                 mappingService.createShortUrl(userId, longUrl)
         );
     }
 
+
     @GetMapping("/{mappingId}")
     public ResponseEntity<UrlMapping> getMapping(
-            @PathVariable String mappingId) {
+            @PathVariable Long mappingId) {
 
         return ResponseEntity.ok(
                 mappingService.getMappingById(mappingId)
         );
     }
-
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<UrlMapping>> getUserMappings(
             @PathVariable String userId) {
@@ -48,7 +56,7 @@ public class MappingController {
 
     @DeleteMapping("/{mappingId}")
     public ResponseEntity<Void> deleteMapping(
-            @PathVariable String mappingId) {
+            @PathVariable Long mappingId) {
 
         mappingService.deleteMapping(mappingId);
         return ResponseEntity.noContent().build();

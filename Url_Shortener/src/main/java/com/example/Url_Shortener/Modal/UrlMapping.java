@@ -15,12 +15,20 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Table(
+        indexes = {
+                @Index(name = "idx_shortcode", columnList = "short_code")
+        },
+        uniqueConstraints = @UniqueConstraint(
+                columnNames = {"user_id", "long_url"}
+        )
+)
 public class UrlMapping {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private String mappingId;
-    private URL shortUrl;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long mappingId;
+    private String shortCode;
     private URL longUrl;
     @ManyToOne
     @JoinColumn(name = "user_id")
