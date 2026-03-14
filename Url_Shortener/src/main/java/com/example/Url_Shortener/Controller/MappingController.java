@@ -5,6 +5,7 @@ import com.example.Url_Shortener.Modal.UrlMapping;
 import com.example.Url_Shortener.Services.MappingService;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -53,7 +54,15 @@ public class MappingController {
                 mappingService.getUserMappings(userId)
         );
     }
+@PutMapping("/{shortCode}")
 
+public ResponseEntity<String> updatingLongUrl(@PathVariable("shortCode" ) String shortCode, @RequestParam("longUrl") String longUrl){
+       try{
+           return  ResponseEntity.ok( mappingService.updateLongUrl(shortCode,longUrl));
+       } catch (Exception e) {
+           throw new RuntimeException(e.getMessage());
+       }
+}
     @DeleteMapping("/{mappingId}")
     public ResponseEntity<Void> deleteMapping(
             @PathVariable Long mappingId) {

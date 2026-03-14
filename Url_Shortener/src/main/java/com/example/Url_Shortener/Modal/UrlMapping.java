@@ -30,7 +30,7 @@ public class UrlMapping {
     private Long mappingId;
     private String shortCode;
     private URL longUrl;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User owner;
     private Date createdAt= new Date();

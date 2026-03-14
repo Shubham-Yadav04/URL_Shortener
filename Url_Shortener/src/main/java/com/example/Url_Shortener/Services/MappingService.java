@@ -8,6 +8,8 @@ import com.example.Url_Shortener.Repository.MappingRepository;
 import com.example.Url_Shortener.Repository.UserRepository;
 
 import com.example.Url_Shortener.Utils.BaseEncoder;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,12 +22,15 @@ import java.util.UUID;
 public class MappingService {
     private final MappingRepository mappingRepository;
     private final UserRepository userRepository;
-
+private final StringRedisTemplate stringRedisTemplate;
 
     public MappingService(MappingRepository mappingRepository,
-                                 UserRepository userRepository) {
+                                 UserRepository userRepository,
+                          StringRedisTemplate stringRedisTemplate
+                          ) {
         this.mappingRepository = mappingRepository;
         this.userRepository = userRepository;
+        this.stringRedisTemplate = stringRedisTemplate;
 
     }
 
@@ -60,6 +65,7 @@ public class MappingService {
     }
 
     @Transactional(readOnly = true)
+
     public UrlMapping getByShortCode(String shortCode) {
         return mappingRepository.findByShortCode(shortCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Short URL not found"));
@@ -76,10 +82,22 @@ public class MappingService {
     }
 
     public void deleteMapping(Long mappingId) {
-
         UrlMapping mapping = mappingRepository.findById(mappingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Mapping not found"));
-
+stringRedisTemplate.opsForValue().getAndDelete(mapping.getShortCode());
         mappingRepository.delete(mapping);
+    }
+    @Transactional
+
+    public String updateLongUrl(String shortCode,String longUrl) throws Exception{
+        try{
+            UrlMapping mapping= mappingRepository.findByShortCode(shortCode).orElseThrow();
+            mapping.setLongUrl(new URL(longUrl));
+            stringRedisTemplate.opsForValue().set(shortCode,longUrl);
+            mappingRepository.save(mapping);
+            return longUrl;
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
