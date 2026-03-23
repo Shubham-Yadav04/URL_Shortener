@@ -43,4 +43,10 @@ public class GlobalExceptionHandler {
         System.out.println(ex.getMessage());
         return new ResponseEntity<>(ex.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler(QRCodeGenerationError.class)
+    public ResponseEntity<?> handleQrGenerationError(QRCodeGenerationError ex) {
+        System.out.println(ex.getMessage());
+        return new ResponseEntity<>(ex.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }

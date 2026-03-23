@@ -8,7 +8,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.net.URL;
+import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Data
@@ -33,5 +35,11 @@ public class UrlMapping {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User owner;
-    private Date createdAt= new Date();
+    private Instant createdAt= Instant.now();
+    @OneToOne
+    private UrlConfig urlConfig;
+
+    private long uniqueCount;
+@OneToMany(mappedBy = "urlMapping" ,fetch =FetchType.LAZY)
+    private List<ClickDetails> clicksDetails;
 }

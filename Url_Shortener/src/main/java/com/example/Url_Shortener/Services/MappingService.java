@@ -2,12 +2,14 @@ package com.example.Url_Shortener.Services;
 
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.ResourceNotFoundException;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.UrlCreationException;
+import com.example.Url_Shortener.Modal.UrlConfig;
 import com.example.Url_Shortener.Modal.UrlMapping;
 import com.example.Url_Shortener.Modal.User;
 import com.example.Url_Shortener.Repository.MappingRepository;
 import com.example.Url_Shortener.Repository.UserRepository;
 
 import com.example.Url_Shortener.Utils.BaseEncoder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -23,14 +25,20 @@ public class MappingService {
     private final MappingRepository mappingRepository;
     private final UserRepository userRepository;
 private final StringRedisTemplate stringRedisTemplate;
+private final UtilService utilService;
 
+
+@Value("${Base_URL")
+private String baseUrl;
     public MappingService(MappingRepository mappingRepository,
                                  UserRepository userRepository,
-                          StringRedisTemplate stringRedisTemplate
+                          StringRedisTemplate stringRedisTemplate,
+                          UtilService utilService
                           ) {
         this.mappingRepository = mappingRepository;
         this.userRepository = userRepository;
         this.stringRedisTemplate = stringRedisTemplate;
+        this.utilService=utilService;
 
     }
 
@@ -49,6 +57,10 @@ private final StringRedisTemplate stringRedisTemplate;
           String  shortCode = BaseEncoder.encode( (mapping.getMappingId()+ (long) (Math.random() * 100)));
             URL shortUrl= new URL("http://localhost:8080/r/"+shortCode);
           mapping.setShortCode(shortCode);
+            UrlConfig urlConfig= new UrlConfig();
+              byte [] qrCode=generateQR(shortUrl.toString());
+              urlConfig.setQrCode(qrCode);
+          mapping.setUrlConfig(urlConfig);
              mappingRepository.save(mapping);
              return shortUrl;
         } catch (MalformedURLException e) {
@@ -96,6 +108,15 @@ stringRedisTemplate.opsForValue().getAndDelete(mapping.getShortCode());
             stringRedisTemplate.opsForValue().set(shortCode,longUrl);
             mappingRepository.save(mapping);
             return longUrl;
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public byte[] generateQR(String shortCode) {
+        try{
+            String shortUrl= baseUrl+"/r"+shortCode;
+            return utilService.generateQRCode(shortUrl);
         } catch (RuntimeException e) {
             throw new RuntimeException(e);
         }
