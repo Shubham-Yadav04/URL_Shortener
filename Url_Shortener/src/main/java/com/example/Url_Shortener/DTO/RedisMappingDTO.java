@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 public class RedisMappingDTO {
     private String longUrl;
     private byte[] qrCode;
-    private boolean isProtected;
+    private Boolean isProtected;
     private long uniqueCount;
 }

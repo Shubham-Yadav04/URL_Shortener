@@ -74,10 +74,7 @@ public class UrlSecurityService {
         mapping.getUrlConfig().setActive(false);
     }
 
-    public boolean verifyPassword(Long mappingId, String rawPassword) {
-
-        UrlMapping mapping = mappingRepository.findById(mappingId)
-                .orElseThrow(() -> new ResourceNotFoundException("Mapping not found"));
+    public boolean verifyPassword(UrlMapping mapping, String rawPassword) {
 
         UrlConfig config = mapping.getUrlConfig();
 

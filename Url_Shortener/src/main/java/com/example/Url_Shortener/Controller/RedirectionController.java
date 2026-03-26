@@ -1,6 +1,7 @@
 package com.example.Url_Shortener.Controller;
 
 import com.example.Url_Shortener.DTO.RedisMappingDTO;
+import com.example.Url_Shortener.ExceptionHandler.Exceptions.ProtectedRoute;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.QRCodeGenerationError;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.RedirectionException;
 import com.example.Url_Shortener.Modal.UrlMapping;
@@ -11,10 +12,12 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.concurrent.TimeUnit;
 
 @RequiredArgsConstructor
 @RestController
@@ -25,13 +28,26 @@ public class RedirectionController {
     private final RedisTemplate<String, RedisMappingDTO> redisTemplate;
 
     @GetMapping("/r/{shortCode}")
-    public void getMapping(
-            @PathVariable String shortCode, HttpServletResponse response) throws IOException {
+    public String getMapping(
+            @PathVariable String shortCode, HttpServletResponse response, Model model) throws IOException {
         RedisMappingDTO cache=redisTemplate.opsForValue().get(shortCode);
-        if(cache!=null) response.sendRedirect(cache.getLongUrl());
+
+        if(cache!=null){
+            System.out.println(cache.toString());
+            if(cache.getIsProtected()!=null && cache.getIsProtected()) {
+                // then provide a page asking for the password then verify the submission if ok the redirect
+                model.addAttribute("shortCode",shortCode);
+                return "PasswordVerification";
+            }
+            response.sendRedirect(cache.getLongUrl());
+        }
         else {
             UrlMapping mapping =
                     mappingService.getByShortCode(shortCode);
+            if(mapping.getUrlConfig().isProtected()) {
+                model.addAttribute("shortCode",shortCode);
+                return "PasswordVerification";
+            }
             if (mapping.getLongUrl() != null) {
                 redisTemplate.opsForValue().set(shortCode,
                         RedisMappingDTO.builder()
@@ -40,10 +56,14 @@ public class RedirectionController {
                                 .longUrl(mapping.getLongUrl().toString())
                                 .qrCode(mapping.getUrlConfig().getQrCode())
                                 .build()
+                        ,
+                        20, TimeUnit.MINUTES
                         );
-                response.sendRedirect(mapping.getLongUrl().toString());
-            } else throw new RedirectionException("Redirection Failed");
+                return "redirect:"+mapping.getLongUrl().toString();
+
+            }
         }
+        throw new RedirectionException("Redirection Failed");
     }
     @GetMapping("/qr/{shortCode}")
     public ResponseEntity<byte[]> getQrForURL(@PathVariable("shortCode") String shortCode){

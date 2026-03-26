@@ -49,4 +49,16 @@ public class GlobalExceptionHandler {
         System.out.println(ex.getMessage());
         return new ResponseEntity<>(ex.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler(InValidShortCode.class)
+    public ResponseEntity<?> InValidShortCodeError(InValidShortCode ex) {
+        System.out.println(ex.getMessage());
+        return new ResponseEntity<>(ex.getMessage(),HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ProtectedRoute.class)
+    public ResponseEntity<?> handleUnauthorizedError(ProtectedRoute ex) {
+        System.out.println(ex.getMessage());
+        return new ResponseEntity<>(ex.getMessage(),HttpStatus.UNAUTHORIZED);
+    }
 }

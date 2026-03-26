@@ -1,17 +1,20 @@
 package com.example.Url_Shortener.Services;
 
 import com.example.Url_Shortener.DTO.UrlMappingDTO;
+import com.example.Url_Shortener.ExceptionHandler.Exceptions.InValidShortCode;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.ResourceNotFoundException;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.UrlCreationException;
 import com.example.Url_Shortener.Modal.UrlConfig;
 import com.example.Url_Shortener.Modal.UrlMapping;
 import com.example.Url_Shortener.Modal.User;
 import com.example.Url_Shortener.Repository.MappingRepository;
+import com.example.Url_Shortener.Repository.UrlConfigRepository;
 import com.example.Url_Shortener.Repository.UserRepository;
 
 import com.example.Url_Shortener.Utils.BaseEncoder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,35 +25,41 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+
 public class MappingService {
     private final MappingRepository mappingRepository;
     private final UserRepository userRepository;
 private final StringRedisTemplate stringRedisTemplate;
 private final UtilService utilService;
+private final UrlConfigRepository urlConfigRepository;
+private  final BCryptPasswordEncoder encoder;
 
-
-@Value("${Base_URL")
-private String baseUrl;
+@Value("${Base_Short_URL}")
+private String shortBaseUrl;
     public MappingService(MappingRepository mappingRepository,
                                  UserRepository userRepository,
                           StringRedisTemplate stringRedisTemplate,
-                          UtilService utilService
+                          UtilService utilService,
+                          UrlConfigRepository urlConfigRepository,
+                          BCryptPasswordEncoder encoder
                           ) {
         this.mappingRepository = mappingRepository;
         this.userRepository = userRepository;
         this.stringRedisTemplate = stringRedisTemplate;
         this.utilService=utilService;
+        this.encoder=encoder;
+        this.urlConfigRepository=urlConfigRepository;
 
     }
 
     @Transactional
-    public UrlMappingDTO createShortUrl(String userId, URL longUrl, String code) {
+    public UrlMappingDTO createShortUrl(String userId, URL longUrl, String code,boolean isProtected ,String password) {
 
         User owner = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-
-        UrlMapping mapping =  mappingRepository.save(UrlMapping.builder()
+      if(mappingRepository.findByShortCode(code).isPresent()) throw new InValidShortCode("short code already exists");
+      UrlMapping mapping =  mappingRepository.save(UrlMapping.builder()
                 .longUrl(longUrl)
                 .owner(owner)
                 .build());
@@ -60,12 +69,17 @@ private String baseUrl;
 shortCode=code;
             }
             else  shortCode = BaseEncoder.encode( (mapping.getMappingId()+ (long) (Math.random() * 100)));
-            URL shortUrl= new URL(baseUrl+shortCode);
+            URL shortUrl= new URL(shortBaseUrl+shortCode);
           mapping.setShortCode(shortCode);
-            UrlConfig urlConfig= new UrlConfig();
-              byte [] qrCode=generateQR(shortUrl.toString());
-              urlConfig.setQrCode(qrCode);
+              byte [] qrCode=generateQR(shortCode);
+              UrlConfig requestURLConfig= UrlConfig.builder().qrCode(qrCode).isProtected(isProtected).build();
+              if(isProtected) {
+                  String passwordHash= encoder.encode(password);
+                  requestURLConfig.setPasswordHash(passwordHash);
+              }
+             UrlConfig urlConfig= urlConfigRepository.save(requestURLConfig);
           mapping.setUrlConfig(urlConfig);
+
              mappingRepository.save(mapping);
 
              return UrlMappingDTO.builder()
@@ -78,7 +92,7 @@ shortCode=code;
 
         } catch (MalformedURLException e) {
             mappingRepository.delete(mapping);
-            throw new UrlCreationException("Failed to create short URL");
+            throw new UrlCreationException("Failed to create short URL"+ e.getMessage());
         }
     }
 
@@ -129,7 +143,7 @@ stringRedisTemplate.opsForValue().getAndDelete(mapping.getShortCode());
 
     public byte[] generateQR(String shortCode) {
         try{
-            String shortUrl= baseUrl+"/r"+shortCode;
+            String shortUrl= shortBaseUrl+shortCode;
             return utilService.generateQRCode(shortUrl);
         } catch (RuntimeException e) {
             throw new RuntimeException(e);
@@ -139,7 +153,7 @@ stringRedisTemplate.opsForValue().getAndDelete(mapping.getShortCode());
         return UrlMappingDTO.builder()
                 .isProtected(urlMapping.getUrlConfig().isProtected())
                 .qrCode(urlMapping.getUrlConfig().getQrCode())
-                .shortUrl(baseUrl+urlMapping.getShortCode())
+                .shortUrl(shortBaseUrl+urlMapping.getShortCode())
                 .longUrl(urlMapping.getLongUrl().toString())
                 .uniqueCount(urlMapping.getUniqueCount())
                 .owner(urlMapping.getOwner().getUsername())

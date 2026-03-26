@@ -32,11 +32,13 @@ public class MappingController {
     @PostMapping("/shorten/{userId}")
     public ResponseEntity<UrlMappingDTO> createShortUrl(
             @PathVariable String userId,
+            @RequestParam("isProtected") boolean isProtected,
+            @RequestParam("password") String password,
             @RequestParam("longUrl") URL longUrl,
             @RequestParam("shortCode") String shortCode
     ) {
         return ResponseEntity.ok(
-                mappingService.createShortUrl(userId, longUrl,shortCode)
+                mappingService.createShortUrl(userId, longUrl,shortCode,isProtected,password)
         );
     }
 

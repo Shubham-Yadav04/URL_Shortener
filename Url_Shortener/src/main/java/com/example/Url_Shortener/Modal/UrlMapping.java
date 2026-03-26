@@ -21,15 +21,21 @@ import java.util.List;
         indexes = {
                 @Index(name = "idx_shortcode", columnList = "short_code")
         },
-        uniqueConstraints = @UniqueConstraint(
-                columnNames = {"user_id", "long_url"}
-        )
+        uniqueConstraints ={
+                @UniqueConstraint(
+                        columnNames = {"user_id", "long_url"}
+                ),
+                @UniqueConstraint(columnNames = {"short_code"})
+        }
+
+
 )
 public class UrlMapping {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long mappingId;
+
     private String shortCode;
     private URL longUrl;
     @ManyToOne(fetch = FetchType.LAZY)
