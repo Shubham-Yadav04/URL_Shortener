@@ -1,5 +1,6 @@
 package com.example.Url_Shortener.Configuration;
 
+import com.example.Url_Shortener.DTO.RedisMappingDTO;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -12,10 +13,10 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 public class RedisConfig {
 @Bean
-    RedisTemplate<String,Object> redisTemplate(RedisConnectionFactory redisConnectionFactory){
-    RedisTemplate<String,Object> template= new RedisTemplate<>();
+    RedisTemplate<String,RedisMappingDTO> redisTemplate(RedisConnectionFactory redisConnectionFactory){
+    RedisTemplate<String,RedisMappingDTO> template= new RedisTemplate<>();
     template.setKeySerializer(new StringRedisSerializer());
-    template.setValueSerializer(new JacksonJsonRedisSerializer<>(Object.class));
+    template.setValueSerializer(new JacksonJsonRedisSerializer<>(RedisMappingDTO.class));
     template.setConnectionFactory(redisConnectionFactory);
     return template;
 

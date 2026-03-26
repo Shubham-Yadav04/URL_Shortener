@@ -1,5 +1,6 @@
 package com.example.Url_Shortener.Services;
 
+import com.example.Url_Shortener.DTO.UrlMappingDTO;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.ResourceNotFoundException;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.UrlCreationException;
 import com.example.Url_Shortener.Modal.UrlConfig;
@@ -10,7 +11,6 @@ import com.example.Url_Shortener.Repository.UserRepository;
 
 import com.example.Url_Shortener.Utils.BaseEncoder;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.CachePut;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
-import java.util.UUID;
+
+import java.util.stream.Collectors;
 
 @Service
 public class MappingService {
@@ -43,26 +44,38 @@ private String baseUrl;
     }
 
     @Transactional
-    public URL createShortUrl(String userId, URL longUrl) {
+    public UrlMappingDTO createShortUrl(String userId, URL longUrl, String code) {
 
         User owner = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+
         UrlMapping mapping =  mappingRepository.save(UrlMapping.builder()
                 .longUrl(longUrl)
                 .owner(owner)
                 .build());
-
-
         try {
-          String  shortCode = BaseEncoder.encode( (mapping.getMappingId()+ (long) (Math.random() * 100)));
-            URL shortUrl= new URL("http://localhost:8080/r/"+shortCode);
+            String shortCode="";
+            if(!code.trim().isEmpty()){
+shortCode=code;
+            }
+            else  shortCode = BaseEncoder.encode( (mapping.getMappingId()+ (long) (Math.random() * 100)));
+            URL shortUrl= new URL(baseUrl+shortCode);
           mapping.setShortCode(shortCode);
             UrlConfig urlConfig= new UrlConfig();
               byte [] qrCode=generateQR(shortUrl.toString());
               urlConfig.setQrCode(qrCode);
           mapping.setUrlConfig(urlConfig);
              mappingRepository.save(mapping);
-             return shortUrl;
+
+             return UrlMappingDTO.builder()
+                     .mappingId(mapping.getMappingId())
+                     .qrCode(qrCode)
+                     .owner(userId)
+                     .longUrl(longUrl.toString())
+                     .shortUrl(shortUrl.toString())
+                     .build();
+
         } catch (MalformedURLException e) {
             mappingRepository.delete(mapping);
             throw new UrlCreationException("Failed to create short URL");
@@ -70,10 +83,11 @@ private String baseUrl;
     }
 
     @Transactional(readOnly = true)
-    public UrlMapping getMappingById(Long mappingId) {
+    public UrlMappingDTO getMappingById(Long mappingId) {
 
-        return mappingRepository.findById(mappingId)
+        UrlMapping mapping= mappingRepository.findById(mappingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Mapping not found"));
+       return convertMappingToDTO(mapping);
     }
 
     @Transactional(readOnly = true)
@@ -84,13 +98,13 @@ private String baseUrl;
     }
 
     @Transactional(readOnly = true)
-    public List<UrlMapping> getUserMappings(String userId) {
+    public List<UrlMappingDTO> getUserMappings(String userId) {
 
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found");
         }
-
-        return mappingRepository.findByOwnerUserId(userId);
+        return mappingRepository.findByOwnerUserId(userId).stream().map(this::convertMappingToDTO
+                ).collect(Collectors.toList());
     }
 
     public void deleteMapping(Long mappingId) {
@@ -120,5 +134,15 @@ stringRedisTemplate.opsForValue().getAndDelete(mapping.getShortCode());
         } catch (RuntimeException e) {
             throw new RuntimeException(e);
         }
+    }
+    public UrlMappingDTO convertMappingToDTO(UrlMapping urlMapping){
+        return UrlMappingDTO.builder()
+                .isProtected(urlMapping.getUrlConfig().isProtected())
+                .qrCode(urlMapping.getUrlConfig().getQrCode())
+                .shortUrl(baseUrl+urlMapping.getShortCode())
+                .longUrl(urlMapping.getLongUrl().toString())
+                .uniqueCount(urlMapping.getUniqueCount())
+                .owner(urlMapping.getOwner().getUsername())
+                .build();
     }
 }

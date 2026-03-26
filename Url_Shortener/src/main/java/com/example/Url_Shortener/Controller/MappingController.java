@@ -1,5 +1,6 @@
 package com.example.Url_Shortener.Controller;
 
+import com.example.Url_Shortener.DTO.UrlMappingDTO;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.RedirectionException;
 import com.example.Url_Shortener.Modal.UrlMapping;
 import com.example.Url_Shortener.Services.MappingService;
@@ -29,17 +30,19 @@ public class MappingController {
         return "mapping working";
     }
     @PostMapping("/shorten/{userId}")
-    public ResponseEntity<URL> createShortUrl(
+    public ResponseEntity<UrlMappingDTO> createShortUrl(
             @PathVariable String userId,
-            @RequestParam("longUrl") URL longUrl) {
+            @RequestParam("longUrl") URL longUrl,
+            @RequestParam("shortCode") String shortCode
+    ) {
         return ResponseEntity.ok(
-                mappingService.createShortUrl(userId, longUrl)
+                mappingService.createShortUrl(userId, longUrl,shortCode)
         );
     }
 
 
     @GetMapping("/{mappingId}")
-    public ResponseEntity<UrlMapping> getMapping(
+    public ResponseEntity<UrlMappingDTO> getMapping(
             @PathVariable Long mappingId) {
 
         return ResponseEntity.ok(
@@ -47,7 +50,7 @@ public class MappingController {
         );
     }
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<UrlMapping>> getUserMappings(
+    public ResponseEntity<List<UrlMappingDTO>> getUserMappings(
             @PathVariable String userId) {
 
         return ResponseEntity.ok(
