@@ -12,15 +12,16 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.net.URL;
+
 import java.util.concurrent.TimeUnit;
 
 @RequiredArgsConstructor
-@RestController
+@Controller
 public class RedirectionController {
 
     private final MappingService mappingService;
@@ -65,6 +66,7 @@ public class RedirectionController {
         }
         throw new RedirectionException("Redirection Failed");
     }
+    @ResponseBody
     @GetMapping("/qr/{shortCode}")
     public ResponseEntity<byte[]> getQrForURL(@PathVariable("shortCode") String shortCode){
         try{

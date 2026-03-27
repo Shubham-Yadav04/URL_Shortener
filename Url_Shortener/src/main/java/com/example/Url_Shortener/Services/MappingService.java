@@ -12,9 +12,12 @@ import com.example.Url_Shortener.Repository.UrlConfigRepository;
 import com.example.Url_Shortener.Repository.UserRepository;
 
 import com.example.Url_Shortener.Utils.BaseEncoder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.authorization.method.AuthorizeReturnObject;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +35,9 @@ public class MappingService {
 private final StringRedisTemplate stringRedisTemplate;
 private final UtilService utilService;
 private final UrlConfigRepository urlConfigRepository;
-private  final BCryptPasswordEncoder encoder;
+
+@Autowired
+    PasswordEncoder passwordEncoder;
 
 @Value("${Base_Short_URL}")
 private String shortBaseUrl;
@@ -40,14 +45,14 @@ private String shortBaseUrl;
                                  UserRepository userRepository,
                           StringRedisTemplate stringRedisTemplate,
                           UtilService utilService,
-                          UrlConfigRepository urlConfigRepository,
-                          BCryptPasswordEncoder encoder
+                          UrlConfigRepository urlConfigRepository
+
                           ) {
         this.mappingRepository = mappingRepository;
         this.userRepository = userRepository;
         this.stringRedisTemplate = stringRedisTemplate;
         this.utilService=utilService;
-        this.encoder=encoder;
+
         this.urlConfigRepository=urlConfigRepository;
 
     }
@@ -74,7 +79,7 @@ shortCode=code;
               byte [] qrCode=generateQR(shortCode);
               UrlConfig requestURLConfig= UrlConfig.builder().qrCode(qrCode).isProtected(isProtected).build();
               if(isProtected) {
-                  String passwordHash= encoder.encode(password);
+                  String passwordHash= passwordEncoder.encode(password);
                   requestURLConfig.setPasswordHash(passwordHash);
               }
              UrlConfig urlConfig= urlConfigRepository.save(requestURLConfig);
