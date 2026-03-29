@@ -23,10 +23,5 @@ import java.sql.Time;
 public class Analytic {
     @EmbeddedId
     private AnalyticID id;
-    private Long mappingId;
-    private Time date;
-    private String country;
-    private String referrer;
-    private String device;
     private BigInteger count;
 }

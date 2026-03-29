@@ -18,7 +18,7 @@ public class ClickEventConsumer {
     private final AnalyticService analyticService;
     private final AnalyticRepository analyticRepository;
     @KafkaListener(topics = "redirectEvent",
-            containerFactory = "singleKafkaListenerFactory",
+            containerFactory = "redis-update",
             groupId = "redis-update"
     )
     public void updateRedisAnalytic(KafkaDTO kafkaDTO, Acknowledgment ack){
@@ -36,7 +36,7 @@ public class ClickEventConsumer {
     }
 
     @KafkaListener(topics="redirectEvent"
-    ,containerFactory = "dbUpdateKafkaFactory"
+    ,containerFactory = "db-update"
     , groupId = "db-update"
     )
     public void updateDBAnalytic(List<KafkaDTO> events, Acknowledgment ack){

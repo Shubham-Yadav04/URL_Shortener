@@ -1,7 +1,6 @@
 package com.example.Url_Shortener.Repository;
 
 import com.example.Url_Shortener.DTO.RedirectAnalyticDTO;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -23,10 +22,10 @@ public class AnalyticRepository  {
         }
 
         String sql = """
-            INSERT INTO analytics 
+            INSERT INTO analytics
             (mapping_id, date, country, device, platform, count)
             VALUES (?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE 
+            ON DUPLICATE KEY UPDATE
             count = count + VALUES(count)
         """;
 

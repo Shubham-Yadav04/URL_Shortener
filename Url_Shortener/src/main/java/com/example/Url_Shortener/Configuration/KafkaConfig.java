@@ -18,7 +18,7 @@ public class KafkaConfig {
 
     @Autowired
     KafkaTemplate<String ,KafkaDTO> kafkaTemplate;
-    @Bean
+    @Bean("db-update")
     public ConcurrentKafkaListenerContainerFactory<String, KafkaDTO> dbUpdateKafkaFactory(
             ConsumerFactory<String, KafkaDTO> consumerFactory) {
 
@@ -39,7 +39,7 @@ public class KafkaConfig {
         return factory;
     }
 
-    @Bean
+    @Bean("redis-update")
     public ConcurrentKafkaListenerContainerFactory<String, KafkaDTO> redisUpdateKafkaFactory(
             ConsumerFactory<String, KafkaDTO> consumerFactory) {
 

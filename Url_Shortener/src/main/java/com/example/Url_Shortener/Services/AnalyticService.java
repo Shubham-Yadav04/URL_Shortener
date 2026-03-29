@@ -2,6 +2,8 @@ package com.example.Url_Shortener.Services;
 
 import com.example.Url_Shortener.DTO.KafkaDTO;
 import com.example.Url_Shortener.DTO.RedirectAnalyticDTO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +19,7 @@ public class AnalyticService {
 
     private final RedisTemplate<String, Object> redisTemplate;
 
-    public AnalyticService(RedisTemplate<String, Object> redisTemplate) {
+    public AnalyticService(@Qualifier("analytic") RedisTemplate<String, Object> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
     public void updateRedis(KafkaDTO event) {
