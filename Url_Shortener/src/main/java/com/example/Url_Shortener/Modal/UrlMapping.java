@@ -46,6 +46,4 @@ public class UrlMapping {
     private UrlConfig urlConfig;
 
     private long uniqueCount;
-@OneToMany(mappedBy = "urlMapping" ,fetch =FetchType.LAZY)
-    private List<ClickDetails> clicksDetails;
 }

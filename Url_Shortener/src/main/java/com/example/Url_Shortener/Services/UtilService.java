@@ -5,6 +5,7 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
@@ -38,5 +39,13 @@ public class UtilService {
         } catch (WriterException | IOException e) {
             throw new RuntimeException("Failed to generate QR Code");
         }
+    }
+
+    public  String getClientIp(HttpServletRequest request) {
+        String xfHeader = request.getHeader("X-Forwarded-For");
+        if (xfHeader != null) {
+            return xfHeader.split(",")[0];
+        }
+        return request.getRemoteAddr();
     }
 }

@@ -1,10 +1,14 @@
 package com.example.Url_Shortener.Controller;
 
+import com.example.Url_Shortener.DTO.KafkaDTO;
 import com.example.Url_Shortener.DTO.VerifyPasswordDTO;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.ProtectedRoute;
 import com.example.Url_Shortener.Modal.UrlMapping;
 import com.example.Url_Shortener.Repository.MappingRepository;
+import com.example.Url_Shortener.Services.RedirectProducer;
 import com.example.Url_Shortener.Services.UrlSecurityService;
+import com.example.Url_Shortener.Services.UtilService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.PredicateSpecification;
@@ -21,6 +25,8 @@ public class UrlSecurityController {
 
     private final UrlSecurityService securityService;
     private  final MappingRepository mappingRepository;
+    private final RedirectProducer redirectProducer;
+    private final UtilService utilService;
 
     @PostMapping("/{id}/protect")
     public ResponseEntity<?> protectUrl(
@@ -64,10 +70,20 @@ public class UrlSecurityController {
     @PostMapping("/verify")
     public void verify(
             VerifyPasswordDTO verifyPasswordDTO,
-            HttpServletResponse response) throws IOException {
+            HttpServletResponse response,
+            HttpServletRequest request
+            ) throws IOException {
         UrlMapping mapping= mappingRepository.findByShortCode(verifyPasswordDTO.getShortCode()).orElseThrow();
         boolean valid = securityService.verifyPassword(mapping,verifyPasswordDTO.getPassword());
-if(valid) response.sendRedirect(mapping.getLongUrl().toString());
+if(valid){
+    redirectProducer.produceRedirect(KafkaDTO.builder()
+            .mappingId(mapping.getMappingId())
+            .deviceType(request.getHeader("deviceType"))
+                    .country(request.getHeader("country"))
+            .referrer(request.getHeader("Referer"))
+            .build());
+    response.sendRedirect(mapping.getLongUrl().toString());
+}
 
 throw new ProtectedRoute("unauthorized ");
     }

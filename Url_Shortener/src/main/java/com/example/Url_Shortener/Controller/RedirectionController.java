@@ -1,17 +1,23 @@
 package com.example.Url_Shortener.Controller;
 
+import com.example.Url_Shortener.DTO.KafkaDTO;
 import com.example.Url_Shortener.DTO.RedisMappingDTO;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.ProtectedRoute;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.QRCodeGenerationError;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.RedirectionException;
 import com.example.Url_Shortener.Modal.UrlMapping;
 import com.example.Url_Shortener.Services.MappingService;
+import com.example.Url_Shortener.Services.RedirectProducer;
+import com.example.Url_Shortener.Services.UtilService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -27,10 +33,12 @@ public class RedirectionController {
     private final MappingService mappingService;
     private final StringRedisTemplate stringRedisTemplate;
     private final RedisTemplate<String, RedisMappingDTO> redisTemplate;
+    private final RedirectProducer redirectProducer;
+    private final UtilService utilService;
 
     @GetMapping("/r/{shortCode}")
     public String getMapping(
-            @PathVariable String shortCode, HttpServletResponse response, Model model) throws IOException {
+            @PathVariable String shortCode, HttpServletRequest request, HttpServletResponse response, Model model) throws IOException {
         RedisMappingDTO cache=redisTemplate.opsForValue().get(shortCode);
 
         if(cache!=null){
@@ -60,6 +68,14 @@ public class RedirectionController {
                         ,
                         20, TimeUnit.MINUTES
                         );
+
+                // before actual redirect create a redirectEvent in kafka.
+                redirectProducer.produceRedirect(KafkaDTO.builder()
+                                .mappingId(mapping.getMappingId())
+                                .deviceType(request.getHeader("deviceType"))
+                                .country(request.getHeader("country"))
+                                .referrer(request.getHeader("Referer"))
+                        .build());
                 return "redirect:"+mapping.getLongUrl().toString();
 
             }
