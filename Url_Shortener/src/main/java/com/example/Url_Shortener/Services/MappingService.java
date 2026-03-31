@@ -1,5 +1,6 @@
 package com.example.Url_Shortener.Services;
 
+import com.example.Url_Shortener.DTO.CreateRequestDTO;
 import com.example.Url_Shortener.DTO.UrlMappingDTO;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.InValidShortCode;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.ResourceNotFoundException;
@@ -15,13 +16,13 @@ import com.example.Url_Shortener.Utils.BaseEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.security.authorization.method.AuthorizeReturnObject;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.net.MalformedURLException;
+
 import java.net.URL;
 import java.util.List;
 
@@ -58,20 +59,24 @@ private String shortBaseUrl;
     }
 
     @Transactional
-    public UrlMappingDTO createShortUrl(String userId, URL longUrl, String code,boolean isProtected ,String password) {
+    public UrlMappingDTO createShortUrl(String userId, CreateRequestDTO request) throws MalformedURLException {
 
         User owner = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+        String password= request.getPassword();
+        String code=request.getShortCode();
+        String longUrl= request.getLongURL();
+        boolean isProtected= request.getProtectedURL() != null;
       if(mappingRepository.findByShortCode(code).isPresent()) throw new InValidShortCode("short code already exists");
       UrlMapping mapping =  mappingRepository.save(UrlMapping.builder()
-                .longUrl(longUrl)
+                .longUrl(new URL(longUrl))
                 .owner(owner)
                 .build());
         try {
             String shortCode="";
-            if(!code.trim().isEmpty()){
-shortCode=code;
+            if(code!=null && !code.isEmpty()){
+shortCode=code.trim();
             }
             else  shortCode = BaseEncoder.encode( (mapping.getMappingId()+ (long) (Math.random() * 100)));
             URL shortUrl= new URL(shortBaseUrl+shortCode);
@@ -91,7 +96,7 @@ shortCode=code;
                      .mappingId(mapping.getMappingId())
                      .qrCode(qrCode)
                      .owner(userId)
-                     .longUrl(longUrl.toString())
+                     .longUrl(longUrl)
                      .shortUrl(shortUrl.toString())
                      .build();
 

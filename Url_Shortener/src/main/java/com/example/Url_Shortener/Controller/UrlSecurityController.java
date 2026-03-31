@@ -1,6 +1,7 @@
 package com.example.Url_Shortener.Controller;
 
 import com.example.Url_Shortener.DTO.KafkaDTO;
+import com.example.Url_Shortener.DTO.RedisMappingDTO;
 import com.example.Url_Shortener.DTO.VerifyPasswordDTO;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.ProtectedRoute;
 import com.example.Url_Shortener.Modal.UrlMapping;
@@ -12,11 +13,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.PredicateSpecification;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.net.http.HttpResponse;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
@@ -27,6 +31,7 @@ public class UrlSecurityController {
     private  final MappingRepository mappingRepository;
     private final RedirectProducer redirectProducer;
     private final UtilService utilService;
+    private final RedisTemplate<String, RedisMappingDTO> redisTemplate;
 
     @PostMapping("/{id}/protect")
     public ResponseEntity<?> protectUrl(
@@ -78,6 +83,7 @@ public class UrlSecurityController {
 if(valid){
     redirectProducer.produceRedirect(KafkaDTO.builder()
             .mappingId(mapping.getMappingId())
+                    .date(LocalDateTime.now())
             .deviceType(request.getHeader("deviceType"))
                     .country(request.getHeader("country"))
             .referrer(request.getHeader("Referer"))

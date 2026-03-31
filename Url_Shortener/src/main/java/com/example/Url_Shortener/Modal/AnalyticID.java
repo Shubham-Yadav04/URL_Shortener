@@ -5,6 +5,7 @@ import jakarta.persistence.Embeddable;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Embeddable
@@ -14,7 +15,7 @@ public class AnalyticID implements Serializable {
     private String mappingId;
 
     @Column(name = "date")
-    private LocalDate date;
+    private LocalDateTime date;
 
     @Column(name = "country")
     private String country;
@@ -27,7 +28,7 @@ public class AnalyticID implements Serializable {
 
     public AnalyticID() {}
 
-    public AnalyticID(String mappingId, LocalDate date,
+    public AnalyticID(String mappingId, LocalDateTime date,
                        String country, String device, String platform) {
         this.mappingId = mappingId;
         this.date = date;

@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RedisMappingDTO {
     private String longUrl;
+    private Long mappingId;
     private byte[] qrCode;
     private Boolean isProtected;
-    private long uniqueCount;
 }

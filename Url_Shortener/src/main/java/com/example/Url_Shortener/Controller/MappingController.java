@@ -1,5 +1,6 @@
 package com.example.Url_Shortener.Controller;
 
+import com.example.Url_Shortener.DTO.CreateRequestDTO;
 import com.example.Url_Shortener.DTO.UrlMappingDTO;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.RedirectionException;
 import com.example.Url_Shortener.Modal.UrlMapping;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 
@@ -32,13 +34,10 @@ public class MappingController {
     @PostMapping("/shorten/{userId}")
     public ResponseEntity<UrlMappingDTO> createShortUrl(
             @PathVariable String userId,
-            @RequestParam("isProtected") boolean isProtected,
-            @RequestParam("password") String password,
-            @RequestParam("longUrl") URL longUrl,
-            @RequestParam("shortCode") String shortCode
-    ) {
+           @RequestBody  CreateRequestDTO requestDTO
+    ) throws MalformedURLException {
         return ResponseEntity.ok(
-                mappingService.createShortUrl(userId, longUrl,shortCode,isProtected,password)
+                mappingService.createShortUrl(userId,requestDTO)
         );
     }
 

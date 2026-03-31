@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Data
@@ -14,7 +16,7 @@ import java.util.Objects;
 public class RedirectAnalyticDTO {
 
     private Long mappingId;
-    private String date;
+    private LocalDateTime date;
     private String country;
     private String device;
     private String platform;

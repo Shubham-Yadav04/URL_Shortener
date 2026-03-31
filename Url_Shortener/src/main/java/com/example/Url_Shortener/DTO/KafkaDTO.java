@@ -5,6 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -15,5 +18,6 @@ public class KafkaDTO {
     private String referrer;
     private String deviceType;
     private String country;
+    private LocalDateTime date;
 
 }

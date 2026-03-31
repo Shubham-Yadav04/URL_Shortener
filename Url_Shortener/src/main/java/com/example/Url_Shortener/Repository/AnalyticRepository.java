@@ -22,12 +22,13 @@ public class AnalyticRepository  {
         }
 
         String sql = """
-            INSERT INTO analytics
-            (mapping_id, date, country, device, platform, count)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-            count = count + VALUES(count)
-        """;
+    INSERT INTO analytic
+    (mapping_id, date, country, device, platform, count)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT (mapping_id, date, country, device, platform)
+    DO UPDATE SET
+   count = analytic.count + EXCLUDED.count
+""";
 
         jdbcTemplate.batchUpdate(
                 sql,
@@ -36,10 +37,13 @@ public class AnalyticRepository  {
                 (ps, entry) -> {
 
                     RedirectAnalyticDTO key = entry.getKey();
+
+                    System.out.println(key.getDate());
+                    System.out.println(key.getDate().getClass());
                     Long count = entry.getValue();
 
                     ps.setLong(1, key.getMappingId());
-                    ps.setString(2, key.getDate()); // or use Date.valueOf()
+                    ps.setObject(2, key.getDate()); // or use Date.valueOf()
                     ps.setString(3, key.getCountry());
                     ps.setString(4, key.getDevice());
                     ps.setString(5, key.getPlatform());
