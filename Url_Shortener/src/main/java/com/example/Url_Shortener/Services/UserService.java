@@ -6,22 +6,58 @@ import com.example.Url_Shortener.ExceptionHandler.Exceptions.UserAlreadyExistsEx
 import com.example.Url_Shortener.Modal.User;
 import com.example.Url_Shortener.Repository.UserRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 public class UserService {
     private final UserRepository userRepository;
-
-    public UserService(UserRepository userRepository) {
+private final BCryptPasswordEncoder bCryptPasswordEncoder;
+    public UserService(UserRepository userRepository,BCryptPasswordEncoder bCryptPasswordEncoder
+    ) {
         this.userRepository = userRepository;
+        this.bCryptPasswordEncoder=bCryptPasswordEncoder;
     }
     public User createUser(User user) {
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new UserAlreadyExistsException("Email " + user.getEmail() + " is already in use.");
         }
+        if(user.getPassword()!=null){
+            user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+        }
+        return userRepository.save(user);
+    }
+    public User signup( String email,String password) {
+
+        String userEmail = email.toLowerCase();
+
+        User existingUser = userRepository.findByEmail(userEmail).orElse(null);
+
+        if (existingUser != null) {
+            if (existingUser.getProviders().contains("LOCAL")) {
+                throw new RuntimeException("User already exists with LOCAL login");
+            }
+            existingUser.getProviders().add("LOCAL");
+            existingUser.setPassword(bCryptPasswordEncoder.encode(password));
+
+            return userRepository.save(existingUser);
+        }
+
+        // 🆕 New user
+        User user = new User();
+        user.setEmail(userEmail);
+        user.setUsername(userEmail);
+        user.setPassword(bCryptPasswordEncoder.encode(password));
+
+        Set<String> providers = new HashSet<>();
+        providers.add("LOCAL");
+        user.setProviders(providers);
+
         return userRepository.save(user);
     }
 

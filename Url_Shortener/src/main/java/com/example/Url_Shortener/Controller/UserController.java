@@ -2,9 +2,17 @@ package com.example.Url_Shortener.Controller;
 
 import com.example.Url_Shortener.Modal.User;
 import com.example.Url_Shortener.Services.UserService;
+import com.example.Url_Shortener.Utils.CustomAuthSuccessHandler;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -12,9 +20,12 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
-
-    public UserController(UserService userService) {
+    private final AuthenticationManager authenticationManager;
+    private final CustomAuthSuccessHandler successHandler;
+    public UserController(UserService userService,AuthenticationManager authenticationManager,CustomAuthSuccessHandler successHandler) {
         this.userService = userService;
+        this.authenticationManager=authenticationManager;
+        this.successHandler=successHandler;
     }
     @GetMapping("/health-check")
     public String healthCheck(){
@@ -34,6 +45,25 @@ public class UserController {
     public ResponseEntity<User> getUser(@PathVariable String userId) {
         return ResponseEntity.ok(userService.getUserById(userId));
     }
+    @PostMapping("/signup")
+    public void signup(@RequestBody User user, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+        // 🔹 1. Create user
+        userService.signup(user.getEmail(),user.getPassword());
+
+        // 🔹 2. Authenticate immediately (AUTO LOGIN)
+        Authentication authentication =
+                authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(
+                               user.getEmail(),
+                                user.getPassword()
+                        )
+                );
+
+        // 🔹 3. Use same success handler (🔥 important)
+        successHandler.onAuthenticationSuccess(request, response, authentication);
+    }
+
 
 
     @PutMapping("/{userId}")

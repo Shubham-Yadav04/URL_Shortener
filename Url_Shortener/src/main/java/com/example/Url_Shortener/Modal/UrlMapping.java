@@ -35,7 +35,7 @@ public class UrlMapping {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long mappingId;
-
+private String projectName;
     private String shortCode;
     private URL longUrl;
     @ManyToOne(fetch = FetchType.LAZY)

@@ -1,11 +1,13 @@
 package com.example.Url_Shortener.Modal;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Data
@@ -19,7 +21,10 @@ public class User {
     private String userId;
     private String username;
     private String email;
+    private String password;
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<UrlMapping> mappedUrl= new ArrayList<>();
+    @ElementCollection
+    private Set<String> providers;
 }
