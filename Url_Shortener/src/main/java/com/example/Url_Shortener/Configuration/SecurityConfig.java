@@ -30,16 +30,7 @@ public class SecurityConfig {
                                 .anyRequest().permitAll()
                         ).
                 addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
-                .formLogin(form -> form
-                        .loginProcessingUrl("/login")
-                        .successHandler(authSuccessHandler)
-                        .failureHandler((req, res, ex) -> {
-                            res.setStatus(401);
-                            res.getWriter().write("Login Failed");
-                        })
-                        .permitAll()
-                )
-
+                .formLogin(AbstractHttpConfigurer::disable)
                 .oauth2Login(oauth -> oauth
                         .successHandler(authSuccessHandler)
                 )

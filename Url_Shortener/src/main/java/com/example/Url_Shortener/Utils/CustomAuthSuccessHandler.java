@@ -1,5 +1,6 @@
 package com.example.Url_Shortener.Utils;
 
+import com.example.Url_Shortener.DTO.CustomUserDetails;
 import com.example.Url_Shortener.Modal.RefreshToken;
 import com.example.Url_Shortener.Modal.User;
 import com.example.Url_Shortener.Repository.RefreshTokenRepository;
@@ -49,35 +50,39 @@ public class CustomAuthSuccessHandler implements AuthenticationSuccessHandler {
             var oauthUser = oauthToken.getPrincipal();
 
             email = oauthUser.getAttribute("email");
-            username = email;
+            username = oauthUser.getAttribute("name");
 
         } else {
             // LOCAL login
             provider = "LOCAL";
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            email = userDetails.getEmail();
+               username = userDetails.getUsername();
 
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            username = userDetails.getUsername();
-            email = username; // assuming email = username
         }
-        User user = userRepository.findByEmail(email).orElse(null);
+        try {
+            User user = userRepository.findByEmail(email).orElse(null);
 
-        if (user == null) {
-            user = new User();
-            user.setEmail(email);
-            user.setUsername(username);
-            user.setProviders(new HashSet<>());
+            if (user == null) {
+                user = new User();
+                user.setEmail(email);
+                user.setUsername(username);
+                user.setProviders(new HashSet<>());
+            }
+
+            Set<String> providers = user.getProviders();
+            if (providers == null) {
+                providers = new HashSet<>();
+            }
+            providers.add(provider);
+            user.setProviders(providers);
+
+            userRepository.save(user);
+            handleLogin(response, username, user);
+            response.sendRedirect("http://localhost:3000/home");
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e.getMessage());
         }
-
-        Set<String> providers = user.getProviders();
-        if (providers == null) {
-            providers = new HashSet<>();
-        }
-        providers.add(provider);
-        user.setProviders(providers);
-
-        userRepository.save(user);
-        handleLogin(response,username,user);
-        response.sendRedirect("http://localhost:3000/home");
     }
 private void handleLogin(HttpServletResponse response,String username,User user){
     String accessToken = jwtService.generateToken(username, 10 * 60);

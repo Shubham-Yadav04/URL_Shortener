@@ -7,13 +7,13 @@ import org.springframework.stereotype.Service;
 @Service
 public class RedirectProducer {
 
-    private final KafkaTemplate<String, KafkaDTO> kafkaTemplate;
-
-    RedirectProducer(KafkaTemplate<String , KafkaDTO> kafkaTemplate){
-        this.kafkaTemplate=kafkaTemplate;
-    }
-
-    public void produceRedirect(KafkaDTO kafkaDTO){
-        kafkaTemplate.send("redirectEvent",kafkaDTO);
-    }
+//    private final KafkaTemplate<String, KafkaDTO> kafkaTemplate;
+//
+//    RedirectProducer(KafkaTemplate<String , KafkaDTO> kafkaTemplate){
+//        this.kafkaTemplate=kafkaTemplate;
+//    }
+//
+//    public void produceRedirect(KafkaDTO kafkaDTO){
+//        kafkaTemplate.send("redirectEvent",kafkaDTO);
+//    }
 }

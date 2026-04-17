@@ -15,17 +15,18 @@ import java.util.Set;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "users")
+@Table(name = "Customers")
 public class User {
 @Id
 @GeneratedValue(strategy = GenerationType.UUID)
     private String userId;
     private String username;
     private String email;
+    @Nullable
     private String password;
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<UrlMapping> mappedUrl= new ArrayList<>();
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     private Set<String> providers;
 }

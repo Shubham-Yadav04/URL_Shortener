@@ -1,6 +1,7 @@
 package com.example.Url_Shortener.Services;
 
 
+import com.example.Url_Shortener.DTO.SignUpDTO;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.ResourceNotFoundException;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.UserAlreadyExistsException;
 import com.example.Url_Shortener.Modal.User;
@@ -29,33 +30,30 @@ private final BCryptPasswordEncoder bCryptPasswordEncoder;
         }
         return userRepository.save(user);
     }
-    public User signup( String email,String password) {
+    public void signup(SignUpDTO signUpDTO) {
+        String userEmail = signUpDTO.getEmail().toLowerCase();
+        String password= signUpDTO.getPassword();
+try {
+    User existingUser = userRepository.findByEmail(userEmail).orElse(null);
 
-        String userEmail = email.toLowerCase();
-
-        User existingUser = userRepository.findByEmail(userEmail).orElse(null);
-
-        if (existingUser != null) {
-            if (existingUser.getProviders().contains("LOCAL")) {
-                throw new RuntimeException("User already exists with LOCAL login");
-            }
-            existingUser.getProviders().add("LOCAL");
-            existingUser.setPassword(bCryptPasswordEncoder.encode(password));
-
-            return userRepository.save(existingUser);
+    if (existingUser != null) {
+        if (!existingUser.getProviders().isEmpty()) {
+            throw new RuntimeException("User already exists with  Oauth login");
         }
+    }
 
 //      New user
-        User user = new User();
-        user.setEmail(userEmail);
-        user.setUsername(userEmail);
-        user.setPassword(bCryptPasswordEncoder.encode(password));
-
-        Set<String> providers = new HashSet<>();
-        providers.add("LOCAL");
-        user.setProviders(providers);
-
-        return userRepository.save(user);
+    User user = new User();
+    user.setEmail(userEmail);
+    user.setUsername(signUpDTO.getUsername());
+    user.setPassword(bCryptPasswordEncoder.encode(password));
+    Set<String> providers = new HashSet<>();
+    providers.add("LOCAL");
+    user.setProviders(providers);
+    userRepository.save(user);
+} catch (RuntimeException e) {
+    throw new RuntimeException(e.getMessage()+"internal server issue ");
+}
     }
 
     public User getUserById(String userId) {

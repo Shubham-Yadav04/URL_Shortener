@@ -1,6 +1,10 @@
 package com.example.Url_Shortener.Controller;
 
+import com.example.Url_Shortener.DTO.CustomUserDetails;
+import com.example.Url_Shortener.DTO.SignUpDTO;
 import com.example.Url_Shortener.Modal.User;
+import com.example.Url_Shortener.Repository.UserRepository;
+import com.example.Url_Shortener.Services.CustomUserDetailService;
 import com.example.Url_Shortener.Services.UserService;
 import com.example.Url_Shortener.Utils.CustomAuthSuccessHandler;
 import jakarta.servlet.ServletException;
@@ -13,7 +17,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.rmi.RemoteException;
 import java.util.List;
+
 
 @RestController
 @RequestMapping("/user")
@@ -22,10 +28,12 @@ public class UserController {
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
     private final CustomAuthSuccessHandler successHandler;
-    public UserController(UserService userService,AuthenticationManager authenticationManager,CustomAuthSuccessHandler successHandler) {
+    private final CustomUserDetailService customUserDetailService;
+    public UserController(UserService userService,AuthenticationManager authenticationManager,CustomAuthSuccessHandler successHandler,CustomUserDetailService customUserDetailService) {
         this.userService = userService;
         this.authenticationManager=authenticationManager;
         this.successHandler=successHandler;
+        this.customUserDetailService= customUserDetailService;
     }
     @GetMapping("/health-check")
     public String healthCheck(){
@@ -46,22 +54,22 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserById(userId));
     }
     @PostMapping("/signup")
-    public void signup(@RequestBody User user, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void signup(@RequestBody SignUpDTO user, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
         // Create user
-        userService.signup(user.getEmail(),user.getPassword());
-
-        //Authenticate immediately (AUTO LOGIN)
-        Authentication authentication =
-                authenticationManager.authenticate(
-                        new UsernamePasswordAuthenticationToken(
-                               user.getEmail(),
-                                user.getPassword()
-                        )
-                );
-
-        // Use same success handler (🔥 important)
-        successHandler.onAuthenticationSuccess(request, response, authentication);
+        try{
+            userService.signup(user);
+            CustomUserDetails customUser= (CustomUserDetails) customUserDetailService.loadUserByUsername(user.getEmail());
+            Authentication authentication =
+                    authenticationManager.authenticate(
+                            new UsernamePasswordAuthenticationToken(
+                                   user, null
+                            )
+                    );
+            successHandler.onAuthenticationSuccess(request, response, authentication);
+        } catch (RuntimeException e) {
+            throw new RemoteException(e.getMessage());
+        }
     }
 
 
