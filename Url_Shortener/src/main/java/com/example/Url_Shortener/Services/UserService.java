@@ -9,10 +9,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class UserService {
@@ -48,7 +45,7 @@ private final BCryptPasswordEncoder bCryptPasswordEncoder;
             return userRepository.save(existingUser);
         }
 
-        // 🆕 New user
+//      New user
         User user = new User();
         user.setEmail(userEmail);
         user.setUsername(userEmail);

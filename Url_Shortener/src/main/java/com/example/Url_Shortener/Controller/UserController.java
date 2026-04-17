@@ -48,10 +48,10 @@ public class UserController {
     @PostMapping("/signup")
     public void signup(@RequestBody User user, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        // 🔹 1. Create user
+        // Create user
         userService.signup(user.getEmail(),user.getPassword());
 
-        // 🔹 2. Authenticate immediately (AUTO LOGIN)
+        //Authenticate immediately (AUTO LOGIN)
         Authentication authentication =
                 authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(
@@ -60,7 +60,7 @@ public class UserController {
                         )
                 );
 
-        // 🔹 3. Use same success handler (🔥 important)
+        // Use same success handler (🔥 important)
         successHandler.onAuthenticationSuccess(request, response, authentication);
     }
 

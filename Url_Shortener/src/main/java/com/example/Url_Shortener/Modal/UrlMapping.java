@@ -2,18 +2,13 @@ package com.example.Url_Shortener.Modal;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import lombok.*;
 import java.net.URL;
 import java.time.Instant;
-import java.util.Date;
-import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -31,13 +26,13 @@ import java.util.List;
 
 )
 public class UrlMapping {
-
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long mappingId;
 private String projectName;
     private String shortCode;
     private URL longUrl;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User owner;

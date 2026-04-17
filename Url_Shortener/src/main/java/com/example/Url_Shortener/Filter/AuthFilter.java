@@ -3,7 +3,7 @@ package com.example.Url_Shortener.Filter;
 import com.example.Url_Shortener.Modal.RefreshToken;
 import com.example.Url_Shortener.Modal.User;
 import com.example.Url_Shortener.Repository.RefreshTokenRepository;
-import com.example.Url_Shortener.Repository.UserRepository;
+
 import com.example.Url_Shortener.Services.CustomUserDetailService;
 import com.example.Url_Shortener.Services.JwtService;
 import jakarta.servlet.FilterChain;
@@ -11,7 +11,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -19,33 +19,31 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.Date;
 
+@Component
 public class AuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final RefreshTokenRepository refreshTokenRepository;
 //    private final UserRepository userRepository;
-private final  CustomUserDetailService customUserDetilService;
+private final  CustomUserDetailService customUserDetailService;
     @Value("${access_expiry}")
     private int accessTokenExpiry;
     @Value("${refresh_expiry}")
     private int refreshTokenExpiry;
 
-    @Value("${backendUrl}")
-    private String backendUrl;
+
     public AuthFilter(JwtService jwtService,
                 RefreshTokenRepository refreshTokenRepository,
                    CustomUserDetailService customUserDetailService) {
             this.jwtService = jwtService;
             this.refreshTokenRepository = refreshTokenRepository;
-            this.customUserDetilService=customUserDetailService;
+            this.customUserDetailService=customUserDetailService;
         }
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -100,14 +98,13 @@ private final  CustomUserDetailService customUserDetilService;
 
                 if (tokenEntity != null &&
                         !tokenEntity.isRevoked() &&
-                        tokenEntity.getExpiryDate().isAfter(LocalDateTime.now())) {
+                        tokenEntity.getExpiryDate().isAfter(Instant.now())) {
 
                     User user = tokenEntity.getUser();
                     username = user.getUsername();
                     String newAccessToken = jwtService.generateToken(username,10*60);
                     ResponseCookie newCookie =  ResponseCookie.from("accessToken")
                             .value(newAccessToken)
-                            .domain(backendUrl)
                             .httpOnly(true)
                             .maxAge(10*60)
                             .secure(true)
@@ -126,7 +123,7 @@ private final  CustomUserDetailService customUserDetilService;
         }
         private void setAuthentication(String username, HttpServletRequest request) {
             UserDetails userDetails =
-                    customUserDetilService.loadUserByUsername(username);
+                    customUserDetailService.loadUserByUsername(username);
             UsernamePasswordAuthenticationToken authToken =
                     new UsernamePasswordAuthenticationToken(
                             userDetails,
