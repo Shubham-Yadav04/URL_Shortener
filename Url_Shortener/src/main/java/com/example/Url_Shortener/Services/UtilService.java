@@ -21,9 +21,7 @@ public class UtilService {
         try {
             QRCodeWriter writer = new QRCodeWriter();
             BitMatrix bitMatrix = writer.encode(stringUrl, BarcodeFormat.QR_CODE, 300, 300);
-
             BufferedImage image = new BufferedImage(300, 300, BufferedImage.TYPE_INT_RGB);
-
             for (int x = 0; x < 300; x++) {
                 for (int y = 0; y < 300; y++) {
                     image.setRGB(x, y,

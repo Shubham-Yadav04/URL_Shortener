@@ -49,7 +49,7 @@ private final  CustomUserDetailService customUserDetailService;
     protected boolean shouldNotFilter(HttpServletRequest request) {
         System.out.println("this route should not be filtered ");
         String path = request.getRequestURI();
-        return path.startsWith("/user") || path.startsWith("/login");
+        return path.startsWith("/user/signup") || path.startsWith("/user/login") || path.startsWith("/login");
     }
         @Override
         protected void doFilterInternal(HttpServletRequest request,

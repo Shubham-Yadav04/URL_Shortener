@@ -1,11 +1,15 @@
 package com.example.Url_Shortener.Services;
 
 
+import com.example.Url_Shortener.DTO.LoginDTO;
 import com.example.Url_Shortener.DTO.SignUpDTO;
+import com.example.Url_Shortener.ExceptionHandler.Exceptions.LoginException;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.ResourceNotFoundException;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.UserAlreadyExistsException;
+import com.example.Url_Shortener.ExceptionHandler.Exceptions.UserNotFoundException;
 import com.example.Url_Shortener.Modal.User;
 import com.example.Url_Shortener.Repository.UserRepository;
+import com.example.Url_Shortener.Utils.CustomAuthSuccessHandler;
 import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,10 +20,12 @@ import java.util.*;
 public class UserService {
     private final UserRepository userRepository;
 private final BCryptPasswordEncoder bCryptPasswordEncoder;
+
     public UserService(UserRepository userRepository,BCryptPasswordEncoder bCryptPasswordEncoder
     ) {
         this.userRepository = userRepository;
         this.bCryptPasswordEncoder=bCryptPasswordEncoder;
+
     }
     public User createUser(User user) {
         if (userRepository.existsByEmail(user.getEmail())) {
@@ -30,7 +36,7 @@ private final BCryptPasswordEncoder bCryptPasswordEncoder;
         }
         return userRepository.save(user);
     }
-    public void signup(SignUpDTO signUpDTO) {
+    public User signup(SignUpDTO signUpDTO) {
         String userEmail = signUpDTO.getEmail().toLowerCase();
         String password= signUpDTO.getPassword();
 try {
@@ -38,10 +44,9 @@ try {
 
     if (existingUser != null) {
         if (!existingUser.getProviders().isEmpty()) {
-            throw new RuntimeException("User already exists with  Oauth login");
+            throw new RuntimeException("User already exists try login");
         }
     }
-
 //      New user
     User user = new User();
     user.setEmail(userEmail);
@@ -50,7 +55,8 @@ try {
     Set<String> providers = new HashSet<>();
     providers.add("LOCAL");
     user.setProviders(providers);
-    userRepository.save(user);
+    return userRepository.save(user);
+
 } catch (RuntimeException e) {
     throw new RuntimeException(e.getMessage()+"internal server issue ");
 }
@@ -83,5 +89,27 @@ try {
             throw new ResourceNotFoundException("Delete failed: User ID " + userId + " not found");
         }
         userRepository.deleteById(userId);
+    }
+
+    public SignUpDTO login(LoginDTO loginDTO) {
+        try{
+            //apply login
+            String email=loginDTO.getEmail();
+            String password=loginDTO.getPassword();
+            User user = userRepository.findByEmail(email).orElse(null);
+            if(user==null){
+                throw new UserNotFoundException("no such user found");
+            }
+            if(bCryptPasswordEncoder.matches(password, user.getPassword())){
+                return SignUpDTO.builder().username(user.getUsername())
+                        .email(user.getEmail())
+                        .password(password)
+                        .build();
+            }
+            throw  new LoginException("wrong Username or Password");
+
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -24,9 +25,9 @@ public class User {
     private String email;
     @Nullable
     private String password;
-    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL ,fetch = FetchType.LAZY)
     @JsonIgnore
     private List<UrlMapping> mappedUrl= new ArrayList<>();
     @ElementCollection(fetch = FetchType.EAGER)
-    private Set<String> providers;
+    private Set<String> providers= new HashSet<>();
 }

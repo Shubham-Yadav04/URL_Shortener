@@ -1,6 +1,7 @@
 package com.example.Url_Shortener.Controller;
 
 import com.example.Url_Shortener.DTO.CustomUserDetails;
+import com.example.Url_Shortener.DTO.LoginDTO;
 import com.example.Url_Shortener.DTO.SignUpDTO;
 import com.example.Url_Shortener.Modal.User;
 import com.example.Url_Shortener.Repository.UserRepository;
@@ -10,10 +11,12 @@ import com.example.Url_Shortener.Utils.CustomAuthSuccessHandler;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -54,24 +57,32 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserById(userId));
     }
     @PostMapping("/signup")
-    public void signup(@RequestBody SignUpDTO user, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
+    public ResponseEntity<?> signup(@RequestBody SignUpDTO signUpDTO, HttpServletRequest request, HttpServletResponse response) throws  Exception{
         // Create user
         try{
-            userService.signup(user);
-            CustomUserDetails customUser= (CustomUserDetails) customUserDetailService.loadUserByUsername(user.getEmail());
+           User user=userService.signup(signUpDTO);
+           successHandler.handleLogin(response,user);
+         return new ResponseEntity<>("User created ", HttpStatus.CREATED);
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+@PostMapping("/login")
+public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO,HttpServletRequest request,HttpServletResponse response){
+        try{
             Authentication authentication =
                     authenticationManager.authenticate(
                             new UsernamePasswordAuthenticationToken(
-                                   user, null
+                                    loginDTO.getEmail(), loginDTO.getPassword()
                             )
                     );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
             successHandler.onAuthenticationSuccess(request, response, authentication);
-        } catch (RuntimeException e) {
-            throw new RemoteException(e.getMessage());
+           return new ResponseEntity<>("authenticated ",HttpStatus.OK);
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
         }
-    }
-
+}
 
 
     @PutMapping("/{userId}")

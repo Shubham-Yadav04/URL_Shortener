@@ -6,14 +6,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import javax.security.auth.login.LoginException;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-@ExceptionHandler(UserNotFoundException.class)
-        public ResponseEntity<?> UserNotFoundException(UserNotFoundException ex) {
-            System.out.println(ex.getMessage());
-             return new ResponseEntity<>(ex.getMessage(),HttpStatus.NOT_FOUND);
-        }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<?> ResourceNotFoundException(ResourceNotFoundException ex) {
@@ -60,5 +56,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleUnauthorizedError(ProtectedRoute ex) {
         System.out.println(ex.getMessage());
         return new ResponseEntity<>(ex.getMessage(),HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<?> handleUserNotFound(UserNotFoundException ex){
+    return new ResponseEntity<>(ex.getMessage(),HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(LoginException.class)
+    public ResponseEntity<?> handleLoginException(com.example.Url_Shortener.ExceptionHandler.Exceptions.LoginException ex){
+        return new ResponseEntity<>(ex.getMessage(),HttpStatus.BAD_REQUEST);
     }
 }
