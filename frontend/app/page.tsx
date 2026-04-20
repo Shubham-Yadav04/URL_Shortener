@@ -1,5 +1,6 @@
 "use client";
 
+import SlidingDiv from "@/components/animation/SlidingDiv";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Link as LinkIcon, BarChart3, ShieldCheck } from "lucide-react";
 import Link from "next/link";
@@ -117,9 +118,18 @@ export default function LandingPage() {
           <p className="text-lg text-gray-400 mb-10 font-light leading-relaxed max-w-2xl mx-auto relative z-10">
             Generate high-quality secure QR codes for every shortened link. Perfect for events, menus, and marketing collateral.
           </p>
-          <Link href="/dashboard" className="relative z-10 inline-flex items-center gap-2 text-base font-semibold text-black bg-white px-8 py-4 rounded-xl hover:bg-gray-200 hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] transition-all duration-300 group">
-            Try it out <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-          </Link>
+         <SlidingDiv bgColorInitial="#ffffff" bgColorFinal="#40ea5aff" >
+  <Link
+    href="/dashboard"
+    className="inline-flex items-center gap-2 px-8 py-4 font-semibold text-black"
+  >
+    Try it out
+    <ArrowRight
+      size={18}
+      className="transition-transform duration-300 group-hover:translate-x-1"
+    />
+  </Link>
+</SlidingDiv>
         </div>
       </AnimatedSection>
 

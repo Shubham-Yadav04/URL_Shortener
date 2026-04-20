@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
+import MouseFollow from "@/components/animation/MouseFollow";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -30,6 +31,7 @@ export default function RootLayout({
       className={`${inter.variable} ${outfit.variable}`}
     >
       <body className="min-h-screen bg-black text-gray-50 flex flex-col font-sans">
+        <MouseFollow/>
         {auth}
         {children}
       </body>
