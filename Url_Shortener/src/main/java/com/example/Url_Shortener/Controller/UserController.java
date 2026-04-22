@@ -64,7 +64,7 @@ public class UserController {
            successHandler.handleLogin(response,user);
          return new ResponseEntity<>("User created ", HttpStatus.CREATED);
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+         throw e;
         }
     }
 @PostMapping("/login")
@@ -80,7 +80,7 @@ public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO,HttpServletRequest
             successHandler.onAuthenticationSuccess(request, response, authentication);
            return new ResponseEntity<>("authenticated ",HttpStatus.OK);
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+           return new ResponseEntity<>(e.getMessage(),HttpStatus.UNAUTHORIZED);
         }
 }
 

@@ -13,15 +13,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.Set;
 @Component
 public class CustomAuthSuccessHandler implements AuthenticationSuccessHandler {
     private final UserRepository userRepository;
@@ -70,13 +67,13 @@ public class CustomAuthSuccessHandler implements AuthenticationSuccessHandler {
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             email = userDetails.getEmail();
             username = userDetails.getUsername();
-            user=userRepository.findByEmail(email).orElse(null);
-            if(user==null) throw new LoginException("login failed");
+            user = userRepository.findByEmail(email).orElse(null);
+            if (user == null) throw new LoginException("login failed");
             user.getProviders().add(provider);
 
         }
-            response.getWriter().write("hello");
             handleLogin(response,user);
+        response.sendRedirect("http://localhost:3000/dashboard");
         } catch (RuntimeException e) {
             throw new RuntimeException(e.getMessage());
         }

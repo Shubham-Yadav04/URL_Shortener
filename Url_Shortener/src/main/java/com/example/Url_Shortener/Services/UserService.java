@@ -44,7 +44,7 @@ try {
 
     if (existingUser != null) {
         if (!existingUser.getProviders().isEmpty()) {
-            throw new RuntimeException("User already exists try login");
+            throw new UserAlreadyExistsException("User email already exists try login");
         }
     }
 //      New user
@@ -58,7 +58,7 @@ try {
     return userRepository.save(user);
 
 } catch (RuntimeException e) {
-    throw new RuntimeException(e.getMessage()+"internal server issue ");
+    throw e;
 }
     }
 

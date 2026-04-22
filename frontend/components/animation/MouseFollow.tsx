@@ -2,7 +2,7 @@
 import { scale, useSpring } from 'motion/react';
 import React, { useRef ,useEffect,useState} from 'react'
 import {motion,Variants} from 'motion/react'
-import { init } from 'next/dist/compiled/webpack/webpack';
+
 
 function MouseFollow() {
 

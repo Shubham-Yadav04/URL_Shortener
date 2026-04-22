@@ -29,7 +29,7 @@ export default function DashboardSidebar() {
         </Link>
       </div>
 
-      <div className="px-4 flex-1 overflow-y-auto">
+      <div className="px-4 flex-1 overflow-y-auto no-scrollbar">
         <div className="mb-8">
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 px-4">Menu</div>
           <Link 
