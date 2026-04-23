@@ -15,7 +15,7 @@ public class RefreshToken {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private String id;
     private String token;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY )
     private User user;
     private String ip;
     private boolean isRevoked=false;

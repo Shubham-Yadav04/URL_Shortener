@@ -18,9 +18,9 @@ public class JwtService {
     private Key generateSecretKey(){
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
-    public String generateToken(String username,int expireTime){
+    public String generateToken(String email,long expireTime){
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis()+expireTime))
 
@@ -28,7 +28,7 @@ public class JwtService {
                 .compact();
     }
 
-    public String  extractUsername(String token){
+    public String  extractEmail(String token){
         return Jwts.parserBuilder()
                 .setSigningKey(generateSecretKey())
                 .build()
@@ -48,7 +48,7 @@ public class JwtService {
     }
 
     public  boolean isValidToken(String token,String username){
-        final String  tokenUsername= extractUsername(token);
+        final String  tokenUsername= extractEmail(token);
         return tokenUsername.equals(username) && !isTokenExpired(token);
     }
 }

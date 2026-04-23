@@ -24,12 +24,6 @@ public class CustomUserDetailService implements UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() ->
                         new UsernameNotFoundException("User not found"));
-
-        // 🔐 Prevent wrong login method
-        if (!user.getProviders().contains("LOCAL")) {
-            throw new RuntimeException("Use OAuth login instead");
-        }
-
         return new CustomUserDetails(user);
     }
 }

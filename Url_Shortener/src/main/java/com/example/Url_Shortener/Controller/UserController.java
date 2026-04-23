@@ -1,8 +1,10 @@
 package com.example.Url_Shortener.Controller;
 
+import com.example.Url_Shortener.DTO.AuthenticatedUserDTO;
 import com.example.Url_Shortener.DTO.CustomUserDetails;
 import com.example.Url_Shortener.DTO.LoginDTO;
 import com.example.Url_Shortener.DTO.SignUpDTO;
+import com.example.Url_Shortener.ExceptionHandler.Exceptions.UserAlreadyExistsException;
 import com.example.Url_Shortener.Modal.User;
 import com.example.Url_Shortener.Repository.UserRepository;
 import com.example.Url_Shortener.Services.CustomUserDetailService;
@@ -42,6 +44,15 @@ public class UserController {
     public String healthCheck(){
         return "user controllers working";
     }
+    @GetMapping("/me")
+    public ResponseEntity<Object> isAuthenticated(Authentication auth){
+            if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
+        CustomUserDetails user=( CustomUserDetails) auth.getPrincipal();
+AuthenticatedUserDTO response=AuthenticatedUserDTO.builder().id(user.getId()).email(user.getEmail()).username(user.getUsername()).build();
+        return ResponseEntity.ok(response);
+    }
     @GetMapping("/")
     public ResponseEntity<List<User>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
@@ -63,8 +74,9 @@ public class UserController {
            User user=userService.signup(signUpDTO);
            successHandler.handleLogin(response,user);
          return new ResponseEntity<>("User created ", HttpStatus.CREATED);
-        } catch (Exception e) {
-         throw e;
+        } catch (Exception ex) {
+
+throw  new RuntimeException(ex.getMessage());
         }
     }
 @PostMapping("/login")
@@ -83,8 +95,6 @@ public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO,HttpServletRequest
            return new ResponseEntity<>(e.getMessage(),HttpStatus.UNAUTHORIZED);
         }
 }
-
-
     @PutMapping("/{userId}")
     public ResponseEntity<User> updateUser(
             @PathVariable String userId,

@@ -81,8 +81,8 @@ public class CustomAuthSuccessHandler implements AuthenticationSuccessHandler {
 public void handleLogin(HttpServletResponse response,User user){
         try {
             String email = user.getEmail();
-            String accessToken = jwtService.generateToken(email, 10 * 60);
-            String refreshTokenValue = jwtService.generateToken(email, 7 * 24 * 60 * 60);
+            String accessToken = jwtService.generateToken(email, 10 * 60*1000);
+            String refreshTokenValue = jwtService.generateToken(email, 7 * 24 * 60 * 60*1000);
             RefreshToken refreshToken = new RefreshToken();
             refreshToken.setToken(refreshTokenValue);
             refreshToken.setUser(user);

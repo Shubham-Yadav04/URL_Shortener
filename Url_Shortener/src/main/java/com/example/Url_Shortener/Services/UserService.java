@@ -13,6 +13,7 @@ import com.example.Url_Shortener.Utils.CustomAuthSuccessHandler;
 import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.*;
 
@@ -36,15 +37,23 @@ private final BCryptPasswordEncoder bCryptPasswordEncoder;
         }
         return userRepository.save(user);
     }
+    @Transactional
     public User signup(SignUpDTO signUpDTO) {
         String userEmail = signUpDTO.getEmail().toLowerCase();
         String password= signUpDTO.getPassword();
 try {
     User existingUser = userRepository.findByEmail(userEmail).orElse(null);
 
-    if (existingUser != null) {
-        if (!existingUser.getProviders().isEmpty()) {
+    if (existingUser != null && !existingUser.getProviders().isEmpty()) {
+        if (existingUser.getProviders().contains("LOCAL")) {
             throw new UserAlreadyExistsException("User email already exists try login");
+        }
+        else {
+            // perform merge for this with the previous user if the provider is not local for previous user else through error
+            existingUser.setPassword(bCryptPasswordEncoder.encode(password));
+existingUser.setUsername(signUpDTO.getUsername());
+existingUser.getProviders().add("LOCAL");
+return userRepository.save(existingUser);
         }
     }
 //      New user

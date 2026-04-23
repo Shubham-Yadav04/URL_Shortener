@@ -29,5 +29,10 @@ public class User {
     @JsonIgnore
     private List<UrlMapping> mappedUrl= new ArrayList<>();
     @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "user_provider",
+            joinColumns = @JoinColumn(name = "user_id")
+    )
+    @Column(name = "provider")
     private Set<String> providers= new HashSet<>();
 }

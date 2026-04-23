@@ -1,5 +1,6 @@
 package com.example.Url_Shortener.Filter;
 
+import com.example.Url_Shortener.ExceptionHandler.Exceptions.LoginException;
 import com.example.Url_Shortener.Modal.RefreshToken;
 import com.example.Url_Shortener.Modal.User;
 import com.example.Url_Shortener.Repository.RefreshTokenRepository;
@@ -12,6 +13,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -47,7 +49,7 @@ private final  CustomUserDetailService customUserDetailService;
         }
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        System.out.println("this route should not be filtered ");
+//        System.out.println("this route should not be filtered ");
         String path = request.getRequestURI();
         return path.startsWith("/user/signup") || path.startsWith("/user/login") || path.startsWith("/login");
     }
@@ -59,7 +61,7 @@ private final  CustomUserDetailService customUserDetailService;
 
             String accessToken = null;
             String refreshToken = null;
-            String username = null;
+            String email = null;
             if (request.getCookies() != null) {
                 for (Cookie cookie : request.getCookies()) {
                     if ("accessToken".equals(cookie.getName())) {
@@ -73,58 +75,51 @@ private final  CustomUserDetailService customUserDetailService;
             try{
                 if (accessToken != null) {
 
-                    username = jwtService.extractUsername(accessToken);
+                    email = jwtService.extractEmail(accessToken);
 
-                    if (username != null &&
+                    if (email != null &&
                             SecurityContextHolder.getContext().getAuthentication() == null &&
-                            jwtService.isValidToken(accessToken, username)) {
+                            jwtService.isValidToken(accessToken, email)) {
 
-                        setAuthentication(username, request);
+                        setAuthentication(email, request);
                         filterChain.doFilter(request, response);
                         return;
                     }
                     else {
-                        throw  new RuntimeException("unauthorized ");
+                        throw  new LoginException("unauthorized ");
                     }
                 }
 
             } catch (RuntimeException e) {
-                System.out.println(e.getMessage());
+                System.out.println("message " + e.getMessage());
             }
             if (refreshToken != null) {
 
-                RefreshToken tokenEntity = refreshTokenRepository
-                        .findById(refreshToken)
-                        .orElse(null);
-
-                if (tokenEntity != null &&
-                        !tokenEntity.isRevoked() &&
-                        tokenEntity.getExpiryDate().isAfter(Instant.now())) {
-
-                    User user = tokenEntity.getUser();
-                    username = user.getUsername();
-                    String newAccessToken = jwtService.generateToken(username,10*60);
-                    ResponseCookie newCookie =  ResponseCookie.from("accessToken")
+                User verifiedUser=verifyRefreshToken(refreshToken);
+                if(verifiedUser!=null) {
+                    String newAccessToken = jwtService.generateToken(email, 10 * 60*1000);
+                    ResponseCookie newCookie = ResponseCookie.from("accessToken")
                             .value(newAccessToken)
                             .httpOnly(true)
-                            .maxAge(10*60)
+                            .maxAge(10 * 60)
                             .secure(true)
                             .sameSite("none")
                             .build();
 
-                    response.setHeader("Set-Cookie",newCookie.toString());
-                    setAuthentication(username, request);
+                    response.setHeader("Set-Cookie", newCookie.toString());
+                    setAuthentication(verifiedUser.getEmail(), request);
 
                     filterChain.doFilter(request, response);
                     return;
+
                 }
             }
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             response.getWriter().write("Unauthorized: Invalid or expired tokens");
         }
-        private void setAuthentication(String username, HttpServletRequest request) {
+        private void setAuthentication(String email, HttpServletRequest request) {
             UserDetails userDetails =
-                    customUserDetailService.loadUserByUsername(username);
+                    customUserDetailService.loadUserByUsername(email);
             UsernamePasswordAuthenticationToken authToken =
                     new UsernamePasswordAuthenticationToken(
                             userDetails,
@@ -134,5 +129,21 @@ private final  CustomUserDetailService customUserDetailService;
 
             authToken.setDetails(request);
             SecurityContextHolder.getContext().setAuthentication(authToken);
+        }
+        private User verifyRefreshToken(String token){
+
+                RefreshToken tokenEntity = refreshTokenRepository
+                        .findByTokenEager(token);
+
+                if (tokenEntity != null &&
+                        !tokenEntity.isRevoked() &&
+                        tokenEntity.getExpiryDate().isAfter(Instant.now())) {
+                    try {
+                        return tokenEntity.getUser();
+                    } catch (RuntimeException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            return null;
         }
 }

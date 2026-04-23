@@ -16,11 +16,13 @@ public class CustomUserDetails implements UserDetails {
     private final String email;
     private final String password;
     private final String username;
+    private final String id;
 
     public CustomUserDetails(User user) {
         this.email= user.getEmail();
         this.username=user.getUsername();
         this.password= user.getPassword();
+        this.id = user.getUserId();
     }
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
