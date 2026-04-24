@@ -3,6 +3,8 @@ import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import MouseFollow from "@/components/animation/MouseFollow";
 
+import { AuthProvider } from "@/context/AuthContext";
+
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -31,9 +33,11 @@ export default function RootLayout({
       className={`${inter.variable} ${outfit.variable}`}
     >
       <body className="min-h-screen bg-black text-gray-50 flex flex-col font-sans">
-        <MouseFollow/>
-        {auth}
-        {children}
+        <AuthProvider>
+          <MouseFollow/>
+          {auth}
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

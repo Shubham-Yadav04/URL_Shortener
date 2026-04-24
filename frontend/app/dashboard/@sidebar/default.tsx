@@ -21,9 +21,9 @@ export default function DashboardSidebar() {
 
   return (
     <aside className="w-[280px] hidden md:flex flex-col bg-[#0a0a0c]/95 border-r border-white/5 backdrop-blur-xl z-40 transition-transform">
-      <div className="p-8 mb-4">
+      <div className="p-6 pt-4 mb-4">
         <Link href="/">
-          <div className="font-heading font-extrabold text-2xl tracking-tighter text-white">
+          <div className="font-heading font-extrabold text-lg sm:text-xl tracking-tighter text-white">
             Shorten.it
           </div>
         </Link>

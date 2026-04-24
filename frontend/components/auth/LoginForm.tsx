@@ -6,12 +6,14 @@ import axios from "axios";
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 
 export default function LoginForm() {
   const backendURL="http://localhost:8080/user/login"
-  const googleAuthURL="http://localhost:8080/user/google"
+  const googleAuthURL="http://localhost:8080/oauth2/authorization/google-login"
   const router= useRouter();
+  const { login } = useAuth();
   const [error,setError] = useState<string>();
   
   const handleLogin=async(e:React.FormEvent<HTMLFormElement>)=>{
@@ -35,7 +37,8 @@ export default function LoginForm() {
       },{withCredentials:true});
       
       if(res.status===200){
-        router.push('/dashboard')
+        login(res.data);
+        router.replace("/dashboard");
       } else {
         setError(res.data || "Login failed");
       }

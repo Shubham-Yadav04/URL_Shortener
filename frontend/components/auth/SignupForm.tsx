@@ -5,10 +5,12 @@ import { ArrowRight, Mail, Lock, User } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 export default function SignupForm() {
   const backendURL="http://localhost:8080/user/signup"
   const googleAuthURL="http://localhost:8080/oauth2/authorization/google-login"
   const router= useRouter()
+  const { login } = useAuth();
   const [error,setError] = useState<string>();
 
   const handleSignup=async(e:React.FormEvent<HTMLFormElement>)=>{
@@ -31,7 +33,8 @@ export default function SignupForm() {
     }
     try{
       const res= await axios.post(backendURL,data,{withCredentials:true})
-     
+      
+      login(res.data);
       router.push("/dashboard")
       
       // else setError(res.data || "Signup failed")
