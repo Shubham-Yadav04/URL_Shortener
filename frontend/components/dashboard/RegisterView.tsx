@@ -1,9 +1,10 @@
 "use client"
 import { motion } from "motion/react"
 import { useState, useRef, ChangeEvent } from "react"
-import { Copy, Check } from "lucide-react"
+import { Copy, Check, CheckLine, CheckCircle2 } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 import { useAuth } from "@/context/AuthContext"
+import axios from "axios"
 
 export default function RegisterView() {
   const { user } = useAuth();
@@ -11,7 +12,7 @@ export default function RegisterView() {
 
   const inputRef = useRef<Record<string, string | boolean>>({});
 
-  const [created, setCreated] = useState<{ shortUrl: string } | null>(null);
+  const [created,setCreated] = useState<{ shortUrl: string } | null>({shortUrl:"http://localhost:8080/523"});
   const [isPasswordProtected, setIsPasswordProtected] = useState(false);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -19,7 +20,7 @@ export default function RegisterView() {
     inputRef.current[name] = value;
   };
 
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const backendUrl = "http://localhost:8080";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,21 +30,18 @@ export default function RegisterView() {
     if (!isPasswordProtected) inputRef.current.password = "";
 
     try {
-      const res = await fetch(`${backendUrl}/mapping/shorten/${user.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(inputRef.current),
-      });
 
-      if (res.ok) {
-        const data = await res.json();
+      console.log(inputRef.current);
+      const body=inputRef.current;
+      const res = await axios.post(`${backendUrl}/mapping/shorten/${user.id}`,
+    body,{withCredentials:true});
+
+        const data = res.data;
         setCreated(data);
-      } else {
-        const data = await res.json();
-        alert("URL creation failed\n" + data.message);
-      }
-    } catch (err) {
-      console.error(err);
+    } catch (err:any) { 
+      console.log(err.response.data.message)
+      alert("URL creation failed"+err.response.data.message
+      );
     }
   };
 
@@ -52,7 +50,7 @@ export default function RegisterView() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="max-w-full bg-[#111]"
+      className="max-w-full bg-[#111] p-2"
     >
     
       <h1 className="font-heading text-2xl  font-bold tracking-tight text-white mb-2 text-center">
@@ -64,25 +62,12 @@ export default function RegisterView() {
 
       {!created?.shortUrl ? (
         <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-3xl  mx-auto bg-[#222] rounded-lg p-3">
-          <div className="flex flex-col gap-1.5 p-2 pl-4 ">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-              Destination URL
-            </label>
-            <input
-              type="url"
-              name="url"
-              placeholder="https://your-long-url.com/path"
-              required
-              onChange={handleChange}
-              className="w-full bg-transparent border-b border-white/15 px-0 py-2 text-sm text-white placeholder:text-xs placeholder:text-gray-600 focus:outline-none focus:border-white/50 transition-colors"
-            />
-          </div>
-
-          {/* Project / Name */}
+          
+           {/* Project / Name */}
           <div className="flex flex-col gap-1.5 p-2 pl-4">
             <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
               Project / Name&nbsp;
-              <span className="normal-case font-normal text-gray-600">(optional)</span>
+
             </label>
             <input
               type="text"
@@ -92,6 +77,34 @@ export default function RegisterView() {
               className="w-full bg-transparent border-b border-white/15 px-0 py-2 text-sm text-white placeholder:text-xs placeholder:text-gray-600 focus:outline-none focus:border-white/50 transition-colors"
             />
           </div>
+          <div className="flex flex-col gap-1.5 p-2 pl-4 ">
+            <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+              Destination URL
+            </label>
+            <input
+              type="url"
+              name="longURL"
+              placeholder="https://your-long-url.com/path"
+              required
+              onChange={handleChange}
+              className="w-full bg-transparent border-b border-white/15 px-0 py-2 text-sm text-white placeholder:text-xs placeholder:text-gray-600 focus:outline-none focus:border-white/50 transition-colors"
+            />
+          </div>
+ {/* Project / Name */}
+          <div className="flex flex-col gap-1.5 p-2 pl-4">
+            <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+              Slug &nbsp;
+              <span className="normal-case font-normal text-gray-600">(optional)</span>
+            </label>
+            <input
+              type="text"
+              name="shortCode"
+              placeholder="e.g. Summer Campaign"
+              onChange={handleChange}
+              className="w-full bg-transparent border-b border-white/15 px-0 py-2 text-sm text-white placeholder:text-xs placeholder:text-gray-600 focus:outline-none focus:border-white/50 transition-colors"
+            />
+          </div>
+         
 
           {/* Password Protection toggle */}
           <div className="flex flex-col gap-3 mt-1 p-2 pl-4">
@@ -151,8 +164,11 @@ export default function RegisterView() {
         </form>
       ) : (
        
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pt-2">
-          
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 ">
+          <div className="flex items-center gap-2 mb-8 pb-5 border-b border-white/10 flex justify-center">
+            <CheckCircle2 size={24} className="text-green-400" />
+            <h1 className="text-xl font-bold text-white">Successfully Created</h1>
+          </div>
           <div className="flex items-center gap-4 mb-8 pb-5 border-b border-white/10">
             <span className="font-mono text-sm text-white tracking-tight break-all">
               {created.shortUrl}
@@ -175,12 +191,12 @@ export default function RegisterView() {
           </div>
 
           {/* QR Code */}
-          <div className="mb-8 w-fit">
-            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+          <div className="mb-8 w-full">
+            <h4 className="text-lg sm:text-base font-semibold text-gray-400 uppercase tracking-widest mb-3">
               QR Code
             </h4>
-            <div className="bg-white p-3 rounded-xl w-max">
-              <QRCodeSVG value={created.shortUrl} size={110} />
+            <div className="bg-white p-3 rounded-xl w-fit mx-auto">
+              <QRCodeSVG value={created.shortUrl} size={220} />
             </div>
             <p className="text-xs text-gray-500 mt-3 font-medium">Scan to test your URL</p>
           </div>

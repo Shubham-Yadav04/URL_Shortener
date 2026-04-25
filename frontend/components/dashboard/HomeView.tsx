@@ -1,7 +1,9 @@
 import { motion } from "motion/react"
 import { MousePointerClick, Globe, Smartphone, TrendingUp } from "lucide-react"
+import { useAuth } from "@/context/AuthContext";
 
 export default function HomeView() {
+  const { user } = useAuth();
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -12,7 +14,7 @@ export default function HomeView() {
       {/* Header */}
       <div>
         <h1 className="font-heading text-lg sm:text-xl font-bold tracking-tight text-white mb-1">
-          Welcome back, User
+          Welcome back, {user?.username}
         </h1>
         <p className="text-xs sm:text-sm text-gray-400">
           Here's a quick overview of your link performance.
@@ -57,4 +59,4 @@ export default function HomeView() {
       </div>
     </motion.div>
   );
-}
+}

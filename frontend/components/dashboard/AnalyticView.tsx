@@ -1,30 +1,54 @@
 import { motion } from "motion/react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Copy, Check, BarChart3, Globe, Smartphone, MousePointerClick } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 
-const mockUrls = [
-  { id: "1", name: "Campaign Alpha", originalUrl: "https://example.com/marketing/campaign-alpha?utm_source=twitter", shortUrl: "https://sh.it/ca1", clicks: 1245 },
-  { id: "2", name: "Twitter Promo", originalUrl: "https://example.com/promo/spring", shortUrl: "https://sh.it/tw2", clicks: 832 },
-];
+
 
 export default function AnalyticsView({ id }: { id: string }) {
-  const urlData = mockUrls.find(u => u.id === id) || mockUrls[0];
-  const [copied, setCopied] = useState(false);
 
+  const [copied, setCopied] = useState(false);
+  const [urlData, setUrlData] = useState<any>(null);
+ const backendUrl="http://localhost:8080"
+  useEffect(()=>{
+    const getAnalytics= async()=>{
+      const res= await fetch(`${backendUrl}/mapping/${id}`,
+        {
+          method:"GET",
+         credentials:"include"
+        }
+      )
+      if(!res.ok){
+        console.log("Not ok")
+      }
+      const data= await res.json();
+      console.log(data);
+      setUrlData(data)
+
+    }
+    getAnalytics();
+  },[id])
+
+  if(urlData===null){
+    return (
+      <div className="w-full h-full flex justify-center items-center">
+      <p className="text-center w-full  ">...loading</p>
+      </div>
+    )
+  }
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-8">
-      <div className="mb-2">
-        <h1 className="font-heading text-3xl font-bold tracking-tight text-white mb-2">{urlData.name}</h1>
-        <p className="text-sm text-gray-400 break-all">{urlData.originalUrl}</p>
-      </div>
+      <div className="mb-2 pt-4 px-2">
+        <h1 className="font-heading text-3xl font-bold tracking-tight text-white mb-2">{urlData.projectName}</h1>
+        <p className="text-sm text-gray-400 break-all">{urlData.longURL}</p>
+      </div> 
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 flex flex-col gap-8">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white/5 border border-white/10 p-5 rounded-2xl">
               <div className="flex items-center gap-2 text-gray-400 text-sm font-medium mb-1"><MousePointerClick size={16} /> Total Clicks</div>
-              <div className="text-3xl font-bold text-white">{urlData.clicks.toLocaleString()}</div>
+              <div className="text-3xl font-bold text-white">{urlData.uniqueCount}</div>
             </div>
             <div className="bg-white/5 border border-white/10 p-5 rounded-2xl">
               <div className="flex items-center gap-2 text-gray-400 text-sm font-medium mb-1"><Globe size={16} /> Top Location</div>
