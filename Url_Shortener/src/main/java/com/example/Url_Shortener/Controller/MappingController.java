@@ -1,6 +1,7 @@
 package com.example.Url_Shortener.Controller;
 
 import com.example.Url_Shortener.DTO.CreateRequestDTO;
+import com.example.Url_Shortener.DTO.MappingListDTO;
 import com.example.Url_Shortener.DTO.UrlMappingDTO;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.RedirectionException;
 import com.example.Url_Shortener.Modal.UrlMapping;
@@ -36,7 +37,7 @@ public class MappingController {
             @PathVariable String userId,
            @RequestBody  CreateRequestDTO requestDTO
     ) throws MalformedURLException {
-        System.out.println("creating the mapping "+ requestDTO.toString());
+
         try{
             UrlMappingDTO res=mappingService.createShortUrl(userId,requestDTO);
             return ResponseEntity.ok(
@@ -58,7 +59,7 @@ res
         );
     }
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<UrlMappingDTO>> getUserMappings(
+    public ResponseEntity<List<MappingListDTO>> getUserMappings(
             @PathVariable String userId) {
 
         return ResponseEntity.ok(

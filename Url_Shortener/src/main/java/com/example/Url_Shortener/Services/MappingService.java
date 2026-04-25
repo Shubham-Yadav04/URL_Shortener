@@ -1,6 +1,7 @@
 package com.example.Url_Shortener.Services;
 
 import com.example.Url_Shortener.DTO.CreateRequestDTO;
+import com.example.Url_Shortener.DTO.MappingListDTO;
 import com.example.Url_Shortener.DTO.UrlMappingDTO;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.InValidShortCode;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.ResourceNotFoundException;
@@ -124,12 +125,12 @@ shortCode=code.trim();
     }
 
     @Transactional(readOnly = true)
-    public List<UrlMappingDTO> getUserMappings(String userId) {
+    public List<MappingListDTO> getUserMappings(String userId) {
 
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found");
         }
-        return mappingRepository.findByOwnerUserId(userId).stream().map(this::convertMappingToDTO
+        return mappingRepository.findByOwnerUserId(userId).stream().map(project->MappingListDTO.builder().id(project.getMappingId()).name(project.getProjectName()).build()
                 ).collect(Collectors.toList());
     }
 

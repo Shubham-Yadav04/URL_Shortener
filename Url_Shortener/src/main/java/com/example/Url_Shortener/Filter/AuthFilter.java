@@ -98,12 +98,12 @@ private final  CustomUserDetailService customUserDetailService;
                 User verifiedUser=verifyRefreshToken(refreshToken);
                 if(verifiedUser!=null) {
                     String newAccessToken = jwtService.generateToken(email, 10 * 60*1000);
-                    ResponseCookie newCookie = ResponseCookie.from("accessToken")
-                            .value(newAccessToken)
+                    ResponseCookie newCookie = ResponseCookie.from("accessToken",newAccessToken)
                             .httpOnly(true)
-                            .maxAge(10 * 60)
                             .secure(true)
-                            .sameSite("none")
+                            .path("/")
+                            .sameSite("None")
+                            .maxAge(10 * 60)
                             .build();
 
                     response.setHeader("Set-Cookie", newCookie.toString());
