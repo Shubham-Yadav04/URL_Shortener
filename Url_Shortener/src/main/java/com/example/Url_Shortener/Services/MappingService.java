@@ -67,11 +67,13 @@ private String shortBaseUrl;
         String password= request.getPassword();
         String code=request.getShortCode();
         String longUrl= request.getLongURL();
-        boolean isProtected= request.getProtectedURL() != null;
+        String projectName= request.getProjectName();
+        boolean isProtected= request.getIsProtected() != null;
       if(mappingRepository.findByShortCode(code).isPresent()) throw new InValidShortCode("short code already exists");
       UrlMapping mapping =  mappingRepository.save(UrlMapping.builder()
                 .longUrl(new URL(longUrl))
                 .owner(owner)
+                      .projectName(projectName)
                 .build());
         try {
             String shortCode="";

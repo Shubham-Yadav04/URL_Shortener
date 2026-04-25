@@ -36,9 +36,16 @@ public class MappingController {
             @PathVariable String userId,
            @RequestBody  CreateRequestDTO requestDTO
     ) throws MalformedURLException {
-        return ResponseEntity.ok(
-                mappingService.createShortUrl(userId,requestDTO)
-        );
+        System.out.println("creating the mapping "+ requestDTO.toString());
+        try{
+            UrlMappingDTO res=mappingService.createShortUrl(userId,requestDTO);
+            return ResponseEntity.ok(
+res
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
 

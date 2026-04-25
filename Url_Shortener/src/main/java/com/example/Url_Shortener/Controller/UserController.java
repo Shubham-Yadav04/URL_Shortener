@@ -5,6 +5,7 @@ import com.example.Url_Shortener.DTO.CustomUserDetails;
 import com.example.Url_Shortener.DTO.LoginDTO;
 import com.example.Url_Shortener.DTO.SignUpDTO;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.UserAlreadyExistsException;
+import com.example.Url_Shortener.ExceptionHandler.Exceptions.UserNotFoundException;
 import com.example.Url_Shortener.Modal.User;
 import com.example.Url_Shortener.Repository.UserRepository;
 import com.example.Url_Shortener.Services.CustomUserDetailService;
@@ -89,8 +90,10 @@ public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO,HttpServletRequest
                             )
                     );
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            successHandler.onAuthenticationSuccess(request, response, authentication);
-           return new ResponseEntity<>("authenticated ",HttpStatus.OK);
+            User user= userService.getUserByEmail(loginDTO.getEmail());
+            successHandler.handleLogin(response,user);
+            if(user==null) throw new UserNotFoundException("user not found");
+           return new ResponseEntity<>(user,HttpStatus.OK);
         } catch (Exception e) {
            return new ResponseEntity<>(e.getMessage(),HttpStatus.UNAUTHORIZED);
         }

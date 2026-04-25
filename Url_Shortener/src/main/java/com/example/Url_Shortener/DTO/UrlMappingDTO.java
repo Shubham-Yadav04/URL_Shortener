@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class UrlMappingDTO {
 
     private long uniqueCount;
+    private String projectName;
     private boolean isProtected;
     private byte[] qrCode;
     private String longUrl;
