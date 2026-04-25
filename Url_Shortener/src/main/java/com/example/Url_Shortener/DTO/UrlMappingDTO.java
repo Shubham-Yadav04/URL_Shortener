@@ -1,11 +1,9 @@
 package com.example.Url_Shortener.DTO;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -14,7 +12,6 @@ public class UrlMappingDTO {
     private long uniqueCount;
     private String projectName;
     private boolean isProtected;
-    private byte[] qrCode;
     private String longUrl;
     private String shortUrl;
     private String owner;

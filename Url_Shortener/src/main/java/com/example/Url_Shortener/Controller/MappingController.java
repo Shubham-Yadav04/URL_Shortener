@@ -61,7 +61,6 @@ res
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<MappingListDTO>> getUserMappings(
             @PathVariable String userId) {
-
         return ResponseEntity.ok(
                 mappingService.getUserMappings(userId)
         );

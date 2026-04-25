@@ -2,9 +2,7 @@ package com.example.Url_Shortener.Controller;
 
 import com.example.Url_Shortener.DTO.KafkaDTO;
 import com.example.Url_Shortener.DTO.RedisMappingDTO;
-import com.example.Url_Shortener.ExceptionHandler.Exceptions.ProtectedRoute;
-import com.example.Url_Shortener.ExceptionHandler.Exceptions.QRCodeGenerationError;
-import com.example.Url_Shortener.ExceptionHandler.Exceptions.RedirectionException;
+
 import com.example.Url_Shortener.Modal.UrlMapping;
 import com.example.Url_Shortener.Services.MappingService;
 import com.example.Url_Shortener.Services.RedirectProducer;
@@ -72,7 +70,7 @@ public class RedirectionController {
                             .mappingId(mapping.getMappingId())
                             .isProtected(mapping.getUrlConfig().isProtected())
                             .longUrl(mapping.getLongUrl().toString())
-                            .qrCode(mapping.getUrlConfig().getQrCode())
+
                             .build()
                     ,
                     20, TimeUnit.MINUTES
@@ -90,15 +88,15 @@ public class RedirectionController {
     }
 throw new  RuntimeException("error in redirect");
     }
-    @ResponseBody
-    @GetMapping("/qr/{shortCode}")
-    public ResponseEntity<byte[]> getQrForURL(@PathVariable("shortCode") String shortCode){
-        try{
-            byte[] qrCode= mappingService.generateQR(shortCode);
-            return new ResponseEntity<>(qrCode, HttpStatus.CREATED);
-        } catch (RuntimeException e) {
-            throw new QRCodeGenerationError(e.getMessage());
-        }
-
-    }
+//    @ResponseBody
+//    @GetMapping("/qr/{shortCode}")
+//    public ResponseEntity<byte[]> getQrForURL(@PathVariable("shortCode") String shortCode){
+//        try{
+//            byte[] qrCode= mappingService.generateQR(shortCode);
+//            return new ResponseEntity<>(qrCode, HttpStatus.CREATED);
+//        } catch (RuntimeException e) {
+//            throw new QRCodeGenerationError(e.getMessage());
+//        }
+//
+//    }
 }

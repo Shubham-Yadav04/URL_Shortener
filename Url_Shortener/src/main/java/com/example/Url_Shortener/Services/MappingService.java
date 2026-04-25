@@ -35,7 +35,7 @@ public class MappingService {
     private final MappingRepository mappingRepository;
     private final UserRepository userRepository;
 private final StringRedisTemplate stringRedisTemplate;
-private final UtilService utilService;
+//private final UtilService utilService;
 private final UrlConfigRepository urlConfigRepository;
 
 @Autowired
@@ -46,14 +46,14 @@ private String shortBaseUrl;
     public MappingService(MappingRepository mappingRepository,
                                  UserRepository userRepository,
                           StringRedisTemplate stringRedisTemplate,
-                          UtilService utilService,
+//                          UtilService utilService,
                           UrlConfigRepository urlConfigRepository
 
                           ) {
         this.mappingRepository = mappingRepository;
         this.userRepository = userRepository;
         this.stringRedisTemplate = stringRedisTemplate;
-        this.utilService=utilService;
+//        this.utilService=utilService;
 
         this.urlConfigRepository=urlConfigRepository;
 
@@ -84,8 +84,8 @@ shortCode=code.trim();
             else  shortCode = BaseEncoder.encode( (mapping.getMappingId()+ (long) (Math.random() * 100)));
             URL shortUrl= new URL(shortBaseUrl+shortCode);
           mapping.setShortCode(shortCode);
-              byte [] qrCode=generateQR(shortCode);
-              UrlConfig requestURLConfig= UrlConfig.builder().qrCode(qrCode).isProtected(isProtected).build();
+//              byte [] qrCode=generateQR(shortCode);
+              UrlConfig requestURLConfig= UrlConfig.builder().isProtected(isProtected).build();
               if(isProtected) {
                   String passwordHash= passwordEncoder.encode(password);
                   requestURLConfig.setPasswordHash(passwordHash);
@@ -97,7 +97,7 @@ shortCode=code.trim();
 
              return UrlMappingDTO.builder()
                      .mappingId(mapping.getMappingId())
-                     .qrCode(qrCode)
+
                      .owner(userId)
                      .longUrl(longUrl)
                      .shortUrl(shortUrl.toString())
@@ -154,18 +154,19 @@ stringRedisTemplate.opsForValue().getAndDelete(mapping.getShortCode());
         }
     }
 
-    public byte[] generateQR(String shortCode) {
-        try{
-            String shortUrl= shortBaseUrl+shortCode;
-            return utilService.generateQRCode(shortUrl);
-        } catch (RuntimeException e) {
-            throw new RuntimeException(e);
-        }
-    }
+//    public byte[] generateQR(String shortCode) {
+//        try{
+//            String shortUrl= shortBaseUrl+shortCode;
+//            return utilService.generateQRCode(shortUrl);
+//        } catch (RuntimeException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
     public UrlMappingDTO convertMappingToDTO(UrlMapping urlMapping){
         return UrlMappingDTO.builder()
                 .isProtected(urlMapping.getUrlConfig().isProtected())
-                .qrCode(urlMapping.getUrlConfig().getQrCode())
+                .mappingId(urlMapping.getMappingId())
+                .projectName(urlMapping.getProjectName())
                 .shortUrl(shortBaseUrl+urlMapping.getShortCode())
                 .longUrl(urlMapping.getLongUrl().toString())
                 .uniqueCount(urlMapping.getUniqueCount())
