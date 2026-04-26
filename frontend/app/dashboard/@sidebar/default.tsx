@@ -11,28 +11,14 @@ export default function DashboardSidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const view = searchParams.get("view");
-
-  const [urls, setUrls] = useState<Array<{ id: string; name: string }>>([]);
+const {mapping,getAllMapping}=useAuth();
   const { user } = useAuth();
   const { isOpen, close } = useSidebar();
   const backendUrl = "http://localhost:8080";
 
   useEffect(() => {
-    const getProjects = async () => {
-      if (!user) return;
-      try {
-        const res = await fetch(`${backendUrl}/mapping/user/${user.id}`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        });
-        const data = await res.json();
-        setUrls(data);
-      } catch (err: any) {
-        console.log("Failed to fetch projects", err);
-      }
-    };
-    getProjects();
+    getAllMapping();
+    
   }, [user]);
 
   const isHome = pathname === "/dashboard" && !view;
@@ -116,15 +102,15 @@ export default function DashboardSidebar() {
           <div className="text-[10px] font-semibold text-gray-600 uppercase tracking-wider mb-3 px-3">
             Your Links
           </div>
-          {urls?.length > 0 ? (
-            urls.map((url) => {
+          {mapping?.length > 0 ? (
+            mapping.map((url) => {
               const isActive =
                 view === "analytics" &&
                 searchParams.get("id") === url.id;
               return (
                 <Link
-                  href={`/dashboard?view=analytics&id=${url.id}`}
-                  key={url.id}
+                  href={`/dashboard?view=analytics&id=${url.mappingId}`}
+                  key={url.mappingId}
                   onClick={handleNavClick}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm mb-1 ${
                     isActive
@@ -136,7 +122,7 @@ export default function DashboardSidebar() {
                     size={17}
                     className={isActive ? "text-white" : "shrink-0"}
                   />
-                  <span className="truncate">{url.name}</span>
+                  <span className="truncate">{url.projectName}</span>
                 </Link>
               );
             })

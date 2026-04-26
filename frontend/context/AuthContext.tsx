@@ -14,9 +14,12 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  mapping:any[];
   login: (userData: User) => void;
   logout: () => void;
   checkAuth: () => Promise<void>;
+  setMapping:React.Dispatch<React.SetStateAction<any[]>>;
+  getAllMapping:()=>Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,6 +29,7 @@ const BACKEND_URL = "http://localhost:8080";
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [mapping,setMapping]= useState<any[]>([]);
 
   const checkAuth = async () => {
     setIsLoading(true);
@@ -46,7 +50,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(false);
     }
   };
-
+const getAllMapping = async()=>{
+  try{
+    const response = await axios.get(`${BACKEND_URL}/mapping/${user?.id}`,{
+      withCredentials:true,
+    });
+    if(response.status===200){
+      setMapping(response.data);
+      console.log("Mapping data:",response.data);
+    }else{
+      setMapping([]);
+    }
+  }catch(error){
+    console.error("Mapping fetch failed:",error);
+    setMapping([]);
+  }
+}
   useEffect(() => {
     checkAuth();
   }, []);
@@ -64,11 +83,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider
       value={{
         user,
+         mapping,
         isAuthenticated: !!user,
         isLoading,
         login,
         logout,
         checkAuth,
+        setMapping,
+        getAllMapping
       }}
     >
       {children}

@@ -1,7 +1,7 @@
 "use client"
 import { motion } from "motion/react"
 import { useState, useRef, ChangeEvent } from "react"
-import { Copy, Check, CheckLine, CheckCircle2 } from "lucide-react"
+import { Copy, Check, CheckCircle2 } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 import { useAuth } from "@/context/AuthContext"
 import axios from "axios"
@@ -12,7 +12,7 @@ export default function RegisterView() {
 
   const inputRef = useRef<Record<string, string | boolean>>({});
 
-  const [created,setCreated] = useState<{ shortUrl: string } | null>({shortUrl:"http://localhost:8080/523"});
+  const [created,setCreated] = useState<{ shortUrl: string } | null>(null);
   const [isPasswordProtected, setIsPasswordProtected] = useState(false);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {

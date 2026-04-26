@@ -17,7 +17,7 @@ function DashboardShell({
 
   return (
     <div className="flex h-screen w-full bg-[#030303] text-gray-100 overflow-hidden font-sans">
-      {/* ── Mobile overlay backdrop ── */}
+
       {isOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm md:hidden"
@@ -25,11 +25,8 @@ function DashboardShell({
           aria-hidden="true"
         />
       )}
-
-      {/* ── Sidebar slot (handles its own translate logic internally) ── */}
       {sidebar}
 
-      {/* ── Main content ── */}
       <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
         {/* Top Navbar */}
         <nav className="h-14 border-b border-white/10 flex items-center px-4 sm:px-6 bg-black/50 backdrop-blur-xl z-20 sticky top-0 gap-3">
@@ -50,9 +47,9 @@ function DashboardShell({
 
         {/* Main Dashboard Content */}
         <div className="flex-1 overflow-y-auto no-scrollbar bg-gradient-to-br from-[#0a0a0c] to-[#030303]">
-          <div className="max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
+          <div className="w-full sm:px-6  sm:py-6 w-full">
             {children}
-          </div>
+          </div> 
         </div>
       </main>
     </div>

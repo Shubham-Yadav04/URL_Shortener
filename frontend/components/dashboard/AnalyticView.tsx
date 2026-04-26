@@ -2,6 +2,7 @@ import { motion } from "motion/react"
 import { useEffect, useState } from "react"
 import { Copy, Check, BarChart3, Globe, Smartphone, MousePointerClick } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
+import { useAuth } from "@/context/AuthContext";
 
 
 
@@ -9,25 +10,19 @@ export default function AnalyticsView({ id }: { id: string }) {
 
   const [copied, setCopied] = useState(false);
   const [urlData, setUrlData] = useState<any>(null);
- const backendUrl="http://localhost:8080"
-  useEffect(()=>{
-    const getAnalytics= async()=>{
-      const res= await fetch(`${backendUrl}/mapping/${id}`,
-        {
-          method:"GET",
-         credentials:"include"
-        }
-      )
-      if(!res.ok){
-        console.log("Not ok")
-      }
-      const data= await res.json();
-      console.log(data);
-      setUrlData(data)
+const {mapping}=useAuth();
 
+useEffect(()=>{
+  if(mapping==null) return ;
+  mapping?.forEach((project)=>{
+    if(project.mappingId==id){
+      setUrlData(project);
+      return;
     }
-    getAnalytics();
-  },[id])
+
+  })
+  // here i have to set the analytics call for the current project so that i can use that to show and i will store the current analytics in the localstorage and update it if the project get changes 
+},[id,mapping])
 
   if(urlData===null){
     return (
