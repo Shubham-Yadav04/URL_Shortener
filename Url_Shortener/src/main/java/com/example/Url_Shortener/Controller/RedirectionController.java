@@ -49,13 +49,13 @@ public class RedirectionController {
             return "PasswordVerification";
         }
 
-//        redirectProducer.produceRedirect(KafkaDTO.builder()
-//                .mappingId(cache.getMappingId())
-//                        .date(LocalDateTime.now())
-//                .deviceType(request.getHeader("deviceType"))
-//                .country(request.getHeader("country"))
-//                .referrer(request.getHeader("Referer"))
-//                .build());
+        redirectProducer.produceRedirect(KafkaDTO.builder()
+                .mappingId(cache.getMappingId())
+                        .date(LocalDateTime.now())
+                .deviceType(request.getHeader("deviceType"))
+                .country(request.getHeader("country"))
+                .referrer(request.getHeader("Referer"))
+                .build());
        return "redirect:"+cache.getLongUrl();
     } else {
         UrlMapping mapping =
@@ -75,14 +75,14 @@ public class RedirectionController {
                     ,
                     20, TimeUnit.MINUTES
             );
-            // before actual redirect create a redirectEvent in kafka.
-//            redirectProducer.produceRedirect(KafkaDTO.builder()
-//                            .date(LocalDateTime.now())
-//                    .mappingId(mapping.getMappingId())
-//                    .deviceType(request.getHeader("deviceType"))
-//                    .country(request.getHeader("country"))
-//                    .referrer(request.getHeader("Referer"))
-//                    .build());
+//             before actual redirect create a redirectEvent in kafka.
+            redirectProducer.produceRedirect(KafkaDTO.builder()
+                            .date(LocalDateTime.now())
+                    .mappingId(mapping.getMappingId())
+                    .deviceType(request.getHeader("deviceType"))
+                    .country(request.getHeader("country"))
+                    .referrer(request.getHeader("Referer"))
+                    .build());
             return "redirect:" + mapping.getLongUrl().toString();
         }
     }
