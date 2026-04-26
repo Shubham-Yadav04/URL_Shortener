@@ -8,8 +8,6 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class UrlMappingDTO {
-
-    private long uniqueCount;
     private String projectName;
     private boolean isProtected;
     private String longUrl;

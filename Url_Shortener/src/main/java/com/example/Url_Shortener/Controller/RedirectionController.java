@@ -70,7 +70,6 @@ public class RedirectionController {
                             .mappingId(mapping.getMappingId())
                             .isProtected(mapping.getUrlConfig().isProtected())
                             .longUrl(mapping.getLongUrl().toString())
-
                             .build()
                     ,
                     20, TimeUnit.MINUTES

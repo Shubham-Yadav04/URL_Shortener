@@ -4,6 +4,7 @@ import com.example.Url_Shortener.DTO.KafkaDTO;
 import com.example.Url_Shortener.DTO.RedirectAnalyticDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -26,27 +27,38 @@ public class AnalyticService {
     public void updateRedis(KafkaDTO event) {
 
         Long mappingId = event.getMappingId();
-
+HashOperations<String,String,Long> hashOperations=redisTemplate.opsForHash();
         // Keys
-        String totalKey = "analytics:total:" + mappingId;
-        String countryKey = "analytics:country:" + mappingId;
-        String deviceKey = "analytics:device:" + mappingId;
-        String platformKey = "analytics:referrer:" + mappingId;
-System.out.println(event.getDate());
-System.out.println(event.getReferrer());
-        // Increment total count
-        redisTemplate.opsForValue().increment(totalKey);
-        // Increment grouped counts (using HASH)
-        redisTemplate.opsForHash().increment(countryKey, safe(event.getCountry()),1);
-        redisTemplate.opsForHash().increment(deviceKey, safe(event.getDeviceType()), 1);
-        redisTemplate.opsForHash().increment(platformKey, safe(event.getReferrer()), 1);
-
-        // Optional: set expiry (avoid memory leak)
+        String hashKey="hash:"+mappingId;
         Duration ttl = Duration.ofHours(24);
-        redisTemplate.expire(totalKey, ttl);
-        redisTemplate.expire(countryKey, ttl);
-        redisTemplate.expire(deviceKey, ttl);
-        redisTemplate.expire(platformKey, ttl);
+        String countryKey="countryKey:" + safe(event.getCountry());
+        String deviceKey="deviceKey:" + safe(event.getDeviceType());
+        String platformKey="platformKey:" + safe(event.getReferrer());
+        boolean isAnalyticPresent=redisTemplate.hasKey(hashKey);
+        if(isAnalyticPresent) {
+            Long countryCount = hashOperations.get(hashKey, "countryKey:" + safe(event.getCountry()));
+            Long deviceCount= hashOperations.get(hashKey, "deviceKey:" + safe(event.getDeviceType()));
+            Long platformCount = hashOperations.get(hashKey, "platformKey:" + safe(event.getReferrer()));
+            redisTemplate.opsForHash().increment(hashKey,"totalCount",1);
+            if (countryCount!=null) {
+                redisTemplate.opsForHash().increment(hashKey, countryKey, 1);
+            }
+            if (deviceCount!=null) {
+                redisTemplate.opsForHash().increment(hashKey, deviceKey, 1);
+            }
+            if (platformCount!=null) {
+                redisTemplate.opsForHash().increment(hashKey, platformKey, 1);
+            }
+        }
+        else {
+            // we have to create an analytic hash
+            Map<String,Long> map= new HashMap<>();
+            map.put(countryKey,1L);
+            map.put(deviceKey,1L);
+            map.put(platformKey,1L);
+            hashOperations.putAll(hashKey,map);
+        }
+        redisTemplate.expire(hashKey,ttl);
     }
     public Map<RedirectAnalyticDTO, Long> aggregateBatch(List<KafkaDTO> events) {
 

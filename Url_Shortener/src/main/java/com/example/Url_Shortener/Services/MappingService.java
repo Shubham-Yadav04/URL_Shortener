@@ -125,12 +125,12 @@ shortCode=code.trim();
     }
 
     @Transactional(readOnly = true)
-    public List<MappingListDTO> getUserMappings(String userId) {
+    public List<UrlMappingDTO> getUserMappings(String userId) {
 
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found");
         }
-        return mappingRepository.findByOwnerUserId(userId).stream().map(project->MappingListDTO.builder().id(project.getMappingId()).name(project.getProjectName()).build()
+        return mappingRepository.findByOwnerUserId(userId).stream().map(this::convertMappingToDTO
                 ).collect(Collectors.toList());
     }
 
@@ -169,7 +169,6 @@ stringRedisTemplate.opsForValue().getAndDelete(mapping.getShortCode());
                 .projectName(urlMapping.getProjectName())
                 .shortUrl(shortBaseUrl+urlMapping.getShortCode())
                 .longUrl(urlMapping.getLongUrl().toString())
-                .uniqueCount(urlMapping.getUniqueCount())
                 .owner(urlMapping.getOwner().getUsername())
                 .build();
     }

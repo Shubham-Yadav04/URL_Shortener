@@ -8,6 +8,7 @@ import com.example.Url_Shortener.Modal.UrlMapping;
 import com.example.Url_Shortener.Services.MappingService;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,9 +24,10 @@ public class MappingController {
 
 
     private final MappingService mappingService;
-
-    public MappingController(MappingService mappingService) {
+private  final RedisTemplate<String,UrlMappingDTO> redisTemplate;
+    public MappingController(MappingService mappingService,RedisTemplate<String,UrlMappingDTO> redisTemplate) {
         this.mappingService = mappingService;
+        this.redisTemplate=redisTemplate;
     }
 
     @GetMapping("/health-check")
@@ -48,18 +50,16 @@ res
         }
 
     }
-
-
     @GetMapping("/{mappingId}")
     public ResponseEntity<UrlMappingDTO> getMapping(
             @PathVariable Long mappingId) {
+    return ResponseEntity.ok(
+            mappingService.getMappingById(mappingId)
+    );
 
-        return ResponseEntity.ok(
-                mappingService.getMappingById(mappingId)
-        );
     }
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<MappingListDTO>> getUserMappings(
+    public ResponseEntity<List<UrlMappingDTO>> getUserMappings(
             @PathVariable String userId) {
         return ResponseEntity.ok(
                 mappingService.getUserMappings(userId)

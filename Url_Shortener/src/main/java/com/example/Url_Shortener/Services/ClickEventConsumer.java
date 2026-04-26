@@ -46,7 +46,6 @@ public class ClickEventConsumer {
 
             // Step 2: batch DB upsert
             analyticRepository.batchUpsert(aggregated);
-
             // 2. commit offset ONLY after success
             ack.acknowledge();
         } catch (Exception e) {
