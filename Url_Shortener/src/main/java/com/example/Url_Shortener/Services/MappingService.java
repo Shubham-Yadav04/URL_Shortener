@@ -1,7 +1,6 @@
 package com.example.Url_Shortener.Services;
 
 import com.example.Url_Shortener.DTO.CreateRequestDTO;
-import com.example.Url_Shortener.DTO.MappingListDTO;
 import com.example.Url_Shortener.DTO.UrlMappingDTO;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.InValidShortCode;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.ResourceNotFoundException;
@@ -15,7 +14,9 @@ import com.example.Url_Shortener.Repository.UserRepository;
 
 import com.example.Url_Shortener.Utils.BaseEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,8 +26,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.net.MalformedURLException;
 
 import java.net.URL;
+import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,8 +39,8 @@ public class MappingService {
     private final MappingRepository mappingRepository;
     private final UserRepository userRepository;
 private final StringRedisTemplate stringRedisTemplate;
-//private final UtilService utilService;
 private final UrlConfigRepository urlConfigRepository;
+private final RedisTemplate<String, Object> redisTemplate;
 
 @Autowired
     PasswordEncoder passwordEncoder;
@@ -46,15 +50,14 @@ private String shortBaseUrl;
     public MappingService(MappingRepository mappingRepository,
                                  UserRepository userRepository,
                           StringRedisTemplate stringRedisTemplate,
-//                          UtilService utilService,
+@Qualifier("analytic") RedisTemplate<String,Object> redisTemplate,
                           UrlConfigRepository urlConfigRepository
 
                           ) {
         this.mappingRepository = mappingRepository;
         this.userRepository = userRepository;
         this.stringRedisTemplate = stringRedisTemplate;
-//        this.utilService=utilService;
-
+this.redisTemplate= redisTemplate;
         this.urlConfigRepository=urlConfigRepository;
 
     }
@@ -171,5 +174,30 @@ stringRedisTemplate.opsForValue().getAndDelete(mapping.getShortCode());
                 .longUrl(urlMapping.getLongUrl().toString())
                 .owner(urlMapping.getOwner().getUsername())
                 .build();
+    }
+
+
+    public Map<Object, Object> getAnalysis(String mappingId){
+        try{
+            Map<Object,Object> analyticMap= redisTemplate.opsForHash().entries("analytic:"+mappingId);
+            if(analyticMap.isEmpty()){
+                // try to get the analytic from the database
+                synchronized (this) {
+                    Map<String, Long> countryTotalCount = mappingRepository.getCountryAndTotalCount();
+                    Map<String, Long> deviceTypeAndReferer = mappingRepository.getDeviceTypeAndRefferer();
+
+                    Map<Object, Object> finalOutput = new HashMap<>();
+                    finalOutput.putAll(countryTotalCount);
+                    finalOutput.putAll(deviceTypeAndReferer);
+                    redisTemplate.opsForHash().putAll("analytic:" + mappingId, finalOutput);
+                    redisTemplate.expire("analytic:"+mappingId, Duration.ofHours(1));
+                    return finalOutput;
+                }
+
+            }
+            return analyticMap;
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

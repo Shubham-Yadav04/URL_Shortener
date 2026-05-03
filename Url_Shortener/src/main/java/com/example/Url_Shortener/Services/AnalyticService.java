@@ -36,19 +36,10 @@ HashOperations<String,String,Long> hashOperations=redisTemplate.opsForHash();
         String platformKey="platformKey:" + safe(event.getReferrer());
         boolean isAnalyticPresent=redisTemplate.hasKey(hashKey);
         if(isAnalyticPresent) {
-            Long countryCount = hashOperations.get(hashKey, "countryKey:" + safe(event.getCountry()));
-            Long deviceCount= hashOperations.get(hashKey, "deviceKey:" + safe(event.getDeviceType()));
-            Long platformCount = hashOperations.get(hashKey, "platformKey:" + safe(event.getReferrer()));
-            redisTemplate.opsForHash().increment(hashKey,"totalCount",1);
-            if (countryCount!=null) {
-                redisTemplate.opsForHash().increment(hashKey, countryKey, 1);
-            }
-            if (deviceCount!=null) {
-                redisTemplate.opsForHash().increment(hashKey, deviceKey, 1);
-            }
-            if (platformCount!=null) {
-                redisTemplate.opsForHash().increment(hashKey, platformKey, 1);
-            }
+            hashOperations.increment(hashKey, countryKey,1);
+            hashOperations.increment(hashKey, deviceKey,1);
+            hashOperations.increment(hashKey, platformKey,1);
+            hashOperations.increment(hashKey,"totalCount",1);
         }
         else {
             // we have to create an analytic hash
@@ -56,6 +47,7 @@ HashOperations<String,String,Long> hashOperations=redisTemplate.opsForHash();
             map.put(countryKey,1L);
             map.put(deviceKey,1L);
             map.put(platformKey,1L);
+            map.put("totalCount",1L);
             hashOperations.putAll(hashKey,map);
         }
         redisTemplate.expire(hashKey,ttl);

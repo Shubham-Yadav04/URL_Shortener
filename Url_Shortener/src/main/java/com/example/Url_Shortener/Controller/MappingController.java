@@ -8,6 +8,8 @@ import com.example.Url_Shortener.Modal.UrlMapping;
 import com.example.Url_Shortener.Services.MappingService;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("mapping")
@@ -24,8 +27,9 @@ public class MappingController {
 
 
     private final MappingService mappingService;
-private  final RedisTemplate<String,UrlMappingDTO> redisTemplate;
-    public MappingController(MappingService mappingService,RedisTemplate<String,UrlMappingDTO> redisTemplate) {
+private  final RedisTemplate<String,Object> redisTemplate;
+
+    public MappingController(MappingService mappingService,@Qualifier("analytic") RedisTemplate<String,Object> redisTemplate) {
         this.mappingService = mappingService;
         this.redisTemplate=redisTemplate;
     }
@@ -73,6 +77,29 @@ public ResponseEntity<String> updatingLongUrl(@PathVariable("shortCode" ) String
        } catch (Exception e) {
            throw new RuntimeException(e.getMessage());
        }
+}
+
+@GetMapping("/day/analysis/{mappingId}")
+public ResponseEntity<?> get24hrAnalysis(@PathVariable("mappingId") String mappingId) {
+try{
+    Map<Object, Object> map=redisTemplate.opsForHash().entries("hash:"+mappingId);
+    if(map!=null){
+        return new ResponseEntity<>(map,HttpStatus.OK);
+    }
+    return new ResponseEntity<>("no analysis",HttpStatus.NOT_FOUND);
+} catch (RuntimeException e) {
+    throw new RuntimeException(e);
+}
+}
+
+
+@GetMapping("/analysis/{mappingId}")
+public ResponseEntity<?> getAnalysis(@PathVariable("mappingId") String mappingId){
+        try{
+            mappingService.getAnalysis(mappingId);
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
+        }
 }
     @DeleteMapping("/{mappingId}")
     public ResponseEntity<Void> deleteMapping(
