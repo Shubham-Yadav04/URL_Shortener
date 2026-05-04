@@ -183,8 +183,8 @@ stringRedisTemplate.opsForValue().getAndDelete(mapping.getShortCode());
             if(analyticMap.isEmpty()){
                 // try to get the analytic from the database
                 synchronized (this) {
-                    Map<String, Long> countryTotalCount = mappingRepository.getCountryAndTotalCount();
-                    Map<String, Long> deviceTypeAndReferer = mappingRepository.getDeviceTypeAndRefferer();
+//                    Map<String, Long> countryTotalCount = mappingRepository.getCountryAndTotalCount();
+//                    Map<String, Long> deviceTypeAndReferer = mappingRepository.getDeviceTypeAndRefferer();
 
                     Map<Object, Object> finalOutput = new HashMap<>();
                     finalOutput.putAll(countryTotalCount);
