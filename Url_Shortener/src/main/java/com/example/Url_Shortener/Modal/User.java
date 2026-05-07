@@ -28,7 +28,7 @@ public class User {
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL ,fetch = FetchType.LAZY)
     @JsonIgnore
     private List<UrlMapping> mappedUrl= new ArrayList<>();
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
             name = "user_provider",
             joinColumns = @JoinColumn(name = "user_id")

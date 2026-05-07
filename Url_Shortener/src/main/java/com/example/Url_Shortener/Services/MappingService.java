@@ -1,6 +1,7 @@
 package com.example.Url_Shortener.Services;
 
 import com.example.Url_Shortener.DTO.CreateRequestDTO;
+import com.example.Url_Shortener.DTO.MappingListDTO;
 import com.example.Url_Shortener.DTO.UrlMappingDTO;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.InValidShortCode;
 import com.example.Url_Shortener.ExceptionHandler.Exceptions.ResourceNotFoundException;
@@ -114,10 +115,16 @@ shortCode=code.trim();
 
     @Transactional(readOnly = true)
     public UrlMappingDTO getMappingById(Long mappingId) {
+try {
+    UrlMapping mapping = mappingRepository.findById(mappingId)
+            .orElseThrow(() -> new ResourceNotFoundException("Mapping not found"));
+    return convertMappingToDTO(mapping);
+}
+catch (Exception ex) {
+System.out.println(ex.getMessage());
+throw  ex;
+}
 
-        UrlMapping mapping= mappingRepository.findById(mappingId)
-                .orElseThrow(() -> new ResourceNotFoundException("Mapping not found"));
-       return convertMappingToDTO(mapping);
     }
 
     @Transactional(readOnly = true)
@@ -128,12 +135,15 @@ shortCode=code.trim();
     }
 
     @Transactional(readOnly = true)
-    public List<UrlMappingDTO> getUserMappings(String userId) {
+    public List<MappingListDTO> getUserMappings(String userId) {
 
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found");
         }
-        return mappingRepository.findByOwnerUserId(userId).stream().map(this::convertMappingToDTO
+        return mappingRepository.findByOwnerUserId(userId).stream().map(mapping-> MappingListDTO.builder().name(mapping.getProjectName()).id(mapping.getMappingId())
+                        .longUrl(mapping.getLongUrl().toString())
+                        .shortUrl(shortBaseUrl+mapping.getShortCode())
+                        .build()
                 ).collect(Collectors.toList());
     }
 
@@ -187,8 +197,8 @@ stringRedisTemplate.opsForValue().getAndDelete(mapping.getShortCode());
 //                    Map<String, Long> deviceTypeAndReferer = mappingRepository.getDeviceTypeAndRefferer();
 
                     Map<Object, Object> finalOutput = new HashMap<>();
-                    finalOutput.putAll(countryTotalCount);
-                    finalOutput.putAll(deviceTypeAndReferer);
+//                    finalOutput.putAll(countryTotalCount);
+//                    finalOutput.putAll(deviceTypeAndReferer);
                     redisTemplate.opsForHash().putAll("analytic:" + mappingId, finalOutput);
                     redisTemplate.expire("analytic:"+mappingId, Duration.ofHours(1));
                     return finalOutput;

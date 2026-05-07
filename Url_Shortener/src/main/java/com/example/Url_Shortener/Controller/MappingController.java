@@ -3,21 +3,13 @@ package com.example.Url_Shortener.Controller;
 import com.example.Url_Shortener.DTO.CreateRequestDTO;
 import com.example.Url_Shortener.DTO.MappingListDTO;
 import com.example.Url_Shortener.DTO.UrlMappingDTO;
-import com.example.Url_Shortener.ExceptionHandler.Exceptions.RedirectionException;
-import com.example.Url_Shortener.Modal.UrlMapping;
 import com.example.Url_Shortener.Services.MappingService;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletResponse;
-import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
@@ -52,7 +44,6 @@ res
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
     }
     @GetMapping("/{mappingId}")
     public ResponseEntity<UrlMappingDTO> getMapping(
@@ -63,7 +54,7 @@ res
 
     }
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<UrlMappingDTO>> getUserMappings(
+    public ResponseEntity<List<MappingListDTO>> getUserMappings(
             @PathVariable String userId) {
         return ResponseEntity.ok(
                 mappingService.getUserMappings(userId)
@@ -93,14 +84,14 @@ try{
 }
 
 
-@GetMapping("/analysis/{mappingId}")
-public ResponseEntity<?> getAnalysis(@PathVariable("mappingId") String mappingId){
-        try{
-            mappingService.getAnalysis(mappingId);
-        } catch (RuntimeException e) {
-            throw new RuntimeException(e);
-        }
-}
+//@GetMapping("/analysis/{mappingId}")
+//public ResponseEntity<?> getAnalysis(@PathVariable("mappingId") String mappingId){
+//        try{
+//            return mappingService.getAnalysis(mappingId);
+//        } catch (RuntimeException e) {
+//            throw new RuntimeException(e);
+//        }
+//}
     @DeleteMapping("/{mappingId}")
     public ResponseEntity<Void> deleteMapping(
             @PathVariable Long mappingId) {

@@ -9,7 +9,7 @@ import java.util.Map;
 @Repository
 public class AnalyticRepository  {
 
-    private final JdbcTemplate jdbcTemplate;
+    private   final JdbcTemplate jdbcTemplate;
 
     public AnalyticRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
