@@ -39,6 +39,5 @@ private String projectName;
     private Instant createdAt= Instant.now();
     @OneToOne
     private UrlConfig urlConfig;
-
     private long uniqueCount;
 }

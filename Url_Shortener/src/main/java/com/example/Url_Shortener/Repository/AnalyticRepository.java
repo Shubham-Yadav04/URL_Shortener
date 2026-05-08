@@ -1,54 +1,66 @@
 package com.example.Url_Shortener.Repository;
 
+import com.example.Url_Shortener.DTO.AnalyticSummaryDTO;
+import com.example.Url_Shortener.DTO.DailyCountDTO;
 import com.example.Url_Shortener.DTO.RedirectAnalyticDTO;
+import com.example.Url_Shortener.Modal.Analytic;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Map;
 
 @Repository
-public class AnalyticRepository  {
+public interface AnalyticRepository extends JpaRepository <Long, Analytic>{
 
-    private   final JdbcTemplate jdbcTemplate;
+    @Query(
+            value = """
+SELECT
+    COUNT(*) AS totalCount,
+    (
+        SELECT country
+        FROM analytic
+        WHERE mapping_id = :mappingId
+        GROUP BY country
+        ORDER BY COUNT(*) DESC
+        LIMIT 1
+    ) AS topCountry,
 
-    public AnalyticRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
+    (
+        SELECT device
+        FROM analytic
+        WHERE mapping_id = :mappingId
+        GROUP BY device
+        ORDER BY COUNT(*) DESC
+        LIMIT 1
+    ) AS topDevice,
 
-    public void batchUpsert(Map<RedirectAnalyticDTO, Long> data) {
+    (
+        SELECT platform
+        FROM analytic
+        WHERE mapping_id = :mappingId
+        GROUP BY platform
+        ORDER BY COUNT(*) DESC
+        LIMIT 1
+    ) AS topPlatform
 
-        if (data == null || data.isEmpty()) {
-            return;
-        }
+FROM analytic
+WHERE mapping_id = :mappingId
+""", nativeQuery = true)
+    AnalyticSummaryDTO getAnalyticSummary(String mappingId);
 
-        String sql = """
-    INSERT INTO analytic
-    (mapping_id, date, country, device, platform, count)
-    VALUES (?, ?, ?, ?, ?, ?)
-    ON CONFLICT (mapping_id, date, country, device, platform)
-    DO UPDATE SET
-   count = analytic.count + EXCLUDED.count
-""";
-
-        jdbcTemplate.batchUpdate(
-                sql,
-                data.entrySet(),
-                data.size(),
-                (ps, entry) -> {
-
-                    RedirectAnalyticDTO key = entry.getKey();
-
-                    System.out.println(key.getDate());
-                    System.out.println(key.getDate().getClass());
-                    Long count = entry.getValue();
-
-                    ps.setLong(1, key.getMappingId());
-                    ps.setObject(2, key.getDate()); // or use Date.valueOf()
-                    ps.setString(3, key.getCountry());
-                    ps.setString(4, key.getDevice());
-                    ps.setString(5, key.getPlatform());
-                    ps.setLong(6, count);
-                }
-        );
-    }
+@Query(
+        value = """
+    SELECT DATE(a.date) AS day,
+           COUNT(*) AS total
+    FROM your_table a
+    WHERE a.mapping_id = :mappingId
+      AND a.date >= NOW() - INTERVAL 7 DAY
+    GROUP BY DATE(a.date)
+    ORDER BY day
+""", nativeQuery = true
+)
+    List<DailyCountDTO> last7DaysSummary(String mappingId);
 }

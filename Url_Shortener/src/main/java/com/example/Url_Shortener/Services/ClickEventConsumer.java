@@ -3,6 +3,7 @@ package com.example.Url_Shortener.Services;
 import com.example.Url_Shortener.DTO.KafkaDTO;
 
 import com.example.Url_Shortener.DTO.RedirectAnalyticDTO;
+import com.example.Url_Shortener.Impl.AnalyticRepoImpl;
 import com.example.Url_Shortener.Repository.AnalyticRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -16,7 +17,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ClickEventConsumer {
     private final AnalyticService analyticService;
-    private final AnalyticRepository analyticRepository;
+    private final AnalyticRepoImpl analyticRepositoryImpl;
     @KafkaListener(topics = "redirectEvent",
             containerFactory = "redis-update",
             groupId = "redis-update"
@@ -45,7 +46,7 @@ public class ClickEventConsumer {
             Map<RedirectAnalyticDTO, Long> aggregated = analyticService.aggregateBatch(events);
 
             // Step 2: batch DB upsert
-            analyticRepository.batchUpsert(aggregated);
+            analyticRepositoryImpl.batchUpsert(aggregated);
             // 2. commit offset ONLY after success
             ack.acknowledge();
         } catch (Exception e) {
