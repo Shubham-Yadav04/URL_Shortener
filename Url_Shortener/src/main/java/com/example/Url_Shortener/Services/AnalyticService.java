@@ -1,7 +1,10 @@
 package com.example.Url_Shortener.Services;
 
+import com.example.Url_Shortener.DTO.AnalyticSummaryDTO;
+import com.example.Url_Shortener.DTO.DailyCountDTO;
 import com.example.Url_Shortener.DTO.KafkaDTO;
 import com.example.Url_Shortener.DTO.RedirectAnalyticDTO;
+import com.example.Url_Shortener.Repository.AnalyticRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.HashOperations;
@@ -20,9 +23,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AnalyticService {
 
     private final RedisTemplate<String, Object> redisTemplate;
-
-    public AnalyticService(@Qualifier("analytic") RedisTemplate<String, Object> redisTemplate) {
+    private final AnalyticRepository analyticRepository;
+    public AnalyticService(@Qualifier("analytic") RedisTemplate<String, Object> redisTemplate,AnalyticRepository analyticRepository) {
         this.redisTemplate = redisTemplate;
+        this.analyticRepository=analyticRepository;
     }
     public void updateRedis(KafkaDTO event) {
 
@@ -75,5 +79,21 @@ HashOperations<String,String,Long> hashOperations=redisTemplate.opsForHash();
     }
     private String safe(String value) {
         return value != null && !value.isEmpty() ? value : "none";
+    }
+
+    public AnalyticSummaryDTO getAnalyticSummary(String mappingId){
+        try{
+            return analyticRepository.getAnalyticSummary(mappingId);
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<DailyCountDTO> last7DayAnalysis(String mappingId){
+        try{
+            return analyticRepository.last7DaysSummary(mappingId);
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
