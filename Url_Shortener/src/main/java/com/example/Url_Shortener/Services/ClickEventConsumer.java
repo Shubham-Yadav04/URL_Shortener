@@ -38,13 +38,12 @@ public class ClickEventConsumer {
 
     @KafkaListener(topics="redirectEvent"
     ,containerFactory = "db-update"
-    , groupId = "db-update"
+    ,groupId = "db-update"
     )
     public void updateDBAnalytic(List<KafkaDTO> events, Acknowledgment ack){
         try {
             // 1. process event
             Map<RedirectAnalyticDTO, Long> aggregated = analyticService.aggregateBatch(events);
-
             // Step 2: batch DB upsert
             analyticRepositoryImpl.batchUpsert(aggregated);
             // 2. commit offset ONLY after success

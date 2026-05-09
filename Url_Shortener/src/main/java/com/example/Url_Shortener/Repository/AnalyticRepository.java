@@ -2,18 +2,17 @@ package com.example.Url_Shortener.Repository;
 
 import com.example.Url_Shortener.DTO.AnalyticSummaryDTO;
 import com.example.Url_Shortener.DTO.DailyCountDTO;
-import com.example.Url_Shortener.DTO.RedirectAnalyticDTO;
+
 import com.example.Url_Shortener.Modal.Analytic;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Map;
+
 
 @Repository
-public interface AnalyticRepository extends JpaRepository <Long, Analytic>{
+public interface AnalyticRepository extends JpaRepository<Analytic,Long>{
 
     @Query(
             value = """

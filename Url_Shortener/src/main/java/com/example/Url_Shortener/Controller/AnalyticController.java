@@ -7,6 +7,8 @@ import com.example.Url_Shortener.Services.AnalyticService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,16 +19,19 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AnalyticController {
     private final AnalyticService analyticService;
-    public List<DailyCountDTO> last7DayAnalysis(String mappingId){
+
+    @GetMapping("/7Day/{mappingId}")
+    public List<DailyCountDTO> last7DayAnalysis(@PathVariable("mappingId") String mappingId){
         try{
             return analyticService.last7DayAnalysis(mappingId);
         } catch (RuntimeException e) {
             throw new RuntimeException(e);
         }
     }
-
-    public ResponseEntity<AnalyticSummaryDTO> getAnalysisSummary(String mappingId){
+@GetMapping("/summary/{mappingId}")
+    public ResponseEntity<AnalyticSummaryDTO> getAnalysisSummary(@PathVariable("mappingId") String mappingId){
         try{
+            System.out.println("in Analytic summary");
             AnalyticSummaryDTO analyticSummaryDTO= analyticService.getAnalyticSummary(mappingId);
             if(analyticSummaryDTO!=null) return new ResponseEntity<>(analyticSummaryDTO, HttpStatus.OK);
 
