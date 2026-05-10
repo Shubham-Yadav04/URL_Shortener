@@ -19,7 +19,6 @@ public class UrlConfig {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String detailId;
-//    private byte[] qrCode;
     private boolean isProtected=false;
     private String passwordHash;
 private boolean isActive=false;
