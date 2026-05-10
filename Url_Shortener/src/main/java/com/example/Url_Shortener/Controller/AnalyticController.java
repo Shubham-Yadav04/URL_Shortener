@@ -4,6 +4,7 @@ import com.example.Url_Shortener.DTO.AnalyticSummaryDTO;
 import com.example.Url_Shortener.DTO.DailyCountDTO;
 import com.example.Url_Shortener.Repository.AnalyticRepository;
 import com.example.Url_Shortener.Services.AnalyticService;
+import com.example.Url_Shortener.Services.AnalyticSummaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AnalyticController {
     private final AnalyticService analyticService;
-
+private final AnalyticSummaryService analyticSummaryService;
     @GetMapping("/7Day/{mappingId}")
     public List<DailyCountDTO> last7DayAnalysis(@PathVariable("mappingId") String mappingId){
         try{
@@ -29,11 +30,13 @@ public class AnalyticController {
         }
     }
 @GetMapping("/summary/{mappingId}")
-    public ResponseEntity<AnalyticSummaryDTO> getAnalysisSummary(@PathVariable("mappingId") String mappingId){
+    public ResponseEntity<AnalyticSummaryDTO> getAnalysisSummary(@PathVariable("mappingId") Long mappingId){
         try{
             System.out.println("in Analytic summary");
-            AnalyticSummaryDTO analyticSummaryDTO= analyticService.getAnalyticSummary(mappingId);
-            if(analyticSummaryDTO!=null) return new ResponseEntity<>(analyticSummaryDTO, HttpStatus.OK);
+            AnalyticSummaryDTO analyticSummaryDTO= analyticSummaryService.getSummary(mappingId);
+            if(analyticSummaryDTO!=null){
+                return new ResponseEntity<>(analyticSummaryDTO, HttpStatus.OK);
+            }
 
             return new ResponseEntity<>(new AnalyticSummaryDTO(), HttpStatus.ACCEPTED);
         } catch (RuntimeException e) {
