@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.net.URL;
 import java.time.Instant;
+import java.util.List;
 
 @Entity
 @Getter
@@ -39,5 +40,4 @@ private String projectName;
     private Instant createdAt= Instant.now();
     @OneToOne
     private UrlConfig urlConfig;
-    private long uniqueCount;
 }

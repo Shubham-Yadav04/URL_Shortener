@@ -19,7 +19,7 @@ public interface AnalyticRepository extends JpaRepository<Analytic,Long>{
 SELECT
     COUNT(*) AS totalCount,
     (
-        SELECT country
+        SELECT country ,COUNT(*) as countryTraffic
         FROM analytic
         WHERE mapping_id = :mappingId
         GROUP BY country
@@ -28,7 +28,7 @@ SELECT
     ) AS topCountry,
 
     (
-        SELECT device
+        SELECT device,COUNT(*) AS deviceCount
         FROM analytic
         WHERE mapping_id = :mappingId
         GROUP BY device
@@ -37,7 +37,7 @@ SELECT
     ) AS topDevice,
 
     (
-        SELECT platform
+        SELECT platform ,COUNT(*) as platformCount;
         FROM analytic
         WHERE mapping_id = :mappingId
         GROUP BY platform

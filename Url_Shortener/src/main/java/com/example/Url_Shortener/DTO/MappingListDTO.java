@@ -10,5 +10,5 @@ import lombok.*;
 public class MappingListDTO {
     private long id;
     private String name;
-    private String shortUrl;
+    private  String shortUrl;
 }
