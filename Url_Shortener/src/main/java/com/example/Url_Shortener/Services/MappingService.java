@@ -141,6 +141,7 @@ throw  ex;
             throw new ResourceNotFoundException("User not found");
         }
         return mappingRepository.findByOwnerUserId(userId).stream().map(mapping-> MappingListDTO.builder().name(mapping.getProjectName()).id(mapping.getMappingId())
+                        .shortUrl(shortBaseUrl+mapping.getShortCode())
                         .build()
                 ).collect(Collectors.toList());
     }

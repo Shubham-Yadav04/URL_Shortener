@@ -26,6 +26,7 @@ public class ClickEventConsumer {
         // consume the click event and update the uniqueCount value in the redis for the mappingId
         try {
             // 1. process event
+            System.out.println("consuming messages for redis ");
             analyticService.updateRedis(kafkaDTO); // for the direct update in the redis
             // 2. commit offset ONLY after success
             ack.acknowledge();
@@ -45,6 +46,7 @@ public class ClickEventConsumer {
             // 1. process event
             Map<RedirectAnalyticDTO, Long> aggregated = analyticService.aggregateBatch(events);
             // Step 2: batch DB upsert
+            System.out.println("update batch and db");
             analyticRepositoryImpl.batchUpsert(aggregated);
             // 2. commit offset ONLY after success
             ack.acknowledge();
