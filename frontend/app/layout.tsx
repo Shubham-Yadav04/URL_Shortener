@@ -25,7 +25,7 @@ export default function RootLayout({
   auth,
 }: Readonly<{
   children: React.ReactNode;
-  auth: React.ReactNode;
+  auth: React.ReactNode; 
 }>) {
   return (
     <html

@@ -1,12 +1,12 @@
 "use client"
 import React, { useRef, useState } from 'react'
-import {color, motion,Variants} from 'motion/react'
+import {motion,Variants} from 'motion/react'
 
-function SlidingDiv({children,bgColorInitial,bgColorFinal,initialColor,finalColor}:{children:React.ReactNode,bgColorInitial:string,bgColorFinal:string,initialColor:string,finalColor:string}) {
+function SlidingDiv({children,bgColorInitial,bgColorFinal}:{children:React.ReactNode,bgColorInitial:string,bgColorFinal:string}) {
     const divRef= useRef<HTMLDivElement>(null);
     const slideVariant:Variants={
         initial:{
-            backgroundColor:"bgColorInitial",
+            backgroundColor:bgColorInitial,
             width:'0%',
         },
         animate:{
@@ -28,9 +28,8 @@ function SlidingDiv({children,bgColorInitial,bgColorFinal,initialColor,finalColo
           backgroundColor:bgColorInitial,
         }}
     >
-        <motion.div
+  <motion.div
         variants={slideVariant}
-      
         className="absolute inset-0 z-0"
       />
       <div className="relative z-10 w-fit h-fit ">

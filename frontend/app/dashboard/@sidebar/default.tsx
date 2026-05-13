@@ -11,14 +11,11 @@ export default function DashboardSidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const view = searchParams.get("view");
-const {mapping,getAllMapping}=useAuth();
+const {getAllMapping}=useAuth();
   const { user } = useAuth();
   const { isOpen, close } = useSidebar();
-  const backendUrl = "http://localhost:8080";
-
   useEffect(() => {
     getAllMapping();
-    
   }, [user]);
 
   const isHome = pathname === "/dashboard" && !view;
@@ -96,21 +93,40 @@ const {mapping,getAllMapping}=useAuth();
             Register URL
           </Link>
         </div>
-
+<ProjectLink view={view}/>
         {/* Your Links section */}
-        <div>
+        
+      </div>
+
+      {/* Footer hint */}
+      <div className="px-6 py-4 border-t border-white/5">
+        <p className="text-[10px] text-gray-600 leading-relaxed">
+          Shorten.it — powerful URL management
+        </p>
+      </div>
+    </aside>
+  );
+}
+
+
+function ProjectLink({view}:{view:string | null}){
+  const {projectDetail}=useAuth();
+  const searchParams = useSearchParams();
+  const handleNavClick = () => close();
+  return (
+    <div>
           <div className="text-[10px] font-semibold text-gray-600 uppercase tracking-wider mb-3 px-3">
             Your Links
           </div>
-          {mapping?.length > 0 ? (
-            mapping.map((url) => {
+          {(projectDetail || [] )?.length > 0 ? (
+            (projectDetail || [] ).map((url) => {
               const isActive =
                 view === "analytics" &&
-                searchParams.get("id") === url.id;
+                searchParams.get("id") === url.id.toString();
               return (
                 <Link
-                  href={`/dashboard?view=analytics&id=${url.mappingId}`}
-                  key={url.mappingId}
+                  href={`/dashboard?view=analytics&id=${url.id}`}
+                  key={url.id}
                   onClick={handleNavClick}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm mb-1 ${
                     isActive
@@ -122,7 +138,7 @@ const {mapping,getAllMapping}=useAuth();
                     size={17}
                     className={isActive ? "text-white" : "shrink-0"}
                   />
-                  <span className="truncate">{url.projectName}</span>
+                  <span className="truncate">{url.name}</span>
                 </Link>
               );
             })
@@ -132,14 +148,5 @@ const {mapping,getAllMapping}=useAuth();
             </p>
           )}
         </div>
-      </div>
-
-      {/* Footer hint */}
-      <div className="px-6 py-4 border-t border-white/5">
-        <p className="text-[10px] text-gray-600 leading-relaxed">
-          Shorten.it — powerful URL management
-        </p>
-      </div>
-    </aside>
-  );
+  )
 }

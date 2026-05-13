@@ -9,16 +9,21 @@ interface User {
   email: string;
   // Add other user fields as needed
 }
+export type ProjectDetail={
+  id:number;
+  name:string;
+  shortUrl:string
+}
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  mapping:any[];
+  projectDetail:ProjectDetail[] | null;
   login: (userData: User) => void;
   logout: () => void;
   checkAuth: () => Promise<void>;
-  setMapping:React.Dispatch<React.SetStateAction<any[]>>;
+  setProjectDetail:React.Dispatch<React.SetStateAction<ProjectDetail[] | null>>;
   getAllMapping:()=>Promise<void>;
 }
 
@@ -29,7 +34,8 @@ const BACKEND_URL = "http://localhost:8080";
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [mapping,setMapping]= useState<any[]>([]);
+  
+  const [projectDetail,setProjectDetail] = useState<ProjectDetail[] |  null>(null)
 
   const checkAuth = async () => {
     setIsLoading(true);
@@ -52,18 +58,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 const getAllMapping = async()=>{
   try{
-    const response = await axios.get(`${BACKEND_URL}/mapping/${user?.id}`,{
+    const response = await axios.get(`${BACKEND_URL}/mapping/user/${user?.id}`,{
       withCredentials:true,
     });
     if(response.status===200){
-      setMapping(response.data);
-      console.log("Mapping data:",response.data);
+      setProjectDetail(response.data);
     }else{
-      setMapping([]);
+      setProjectDetail([]);
     }
   }catch(error){
     console.error("Mapping fetch failed:",error);
-    setMapping([]);
+    setProjectDetail([]);
   }
 }
   useEffect(() => {
@@ -73,23 +78,24 @@ const getAllMapping = async()=>{
   const login = (userData: User) => {
     setUser(userData);
   };
-
+  
   const logout = async () => {
     // Implement backend logout if available
     setUser(null);
+    setProjectDetail([]);
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-         mapping,
+        projectDetail,
         isAuthenticated: !!user,
         isLoading,
         login,
         logout,
         checkAuth,
-        setMapping,
+        setProjectDetail,
         getAllMapping
       }}
     >

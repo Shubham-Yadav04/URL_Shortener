@@ -3,18 +3,17 @@ import { motion } from "motion/react"
 import { useState, useRef, ChangeEvent } from "react"
 import { Copy, Check, CheckCircle2 } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
-import { useAuth } from "@/context/AuthContext"
+import { useAuth ,ProjectDetail} from "@/context/AuthContext"
 import axios from "axios"
 
 export default function RegisterView() {
-  const { user } = useAuth();
+  const { user,projectDetail,setProjectDetail } = useAuth();
   const [copied, setCopied] = useState(false);
 
   const inputRef = useRef<Record<string, string | boolean>>({});
 
   const [created,setCreated] = useState<{ shortUrl: string } | null>(null);
   const [isPasswordProtected, setIsPasswordProtected] = useState(false);
-
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     inputRef.current[name] = value;
@@ -37,8 +36,21 @@ export default function RegisterView() {
     body,{withCredentials:true});
 
         const data = res.data;
+        console.log(data);
         setCreated(data);
+        const obj={
+          id:data.id,
+          name:data.projectName,
+          shortUrl:data.shortUrl
+        }
+        if(projectDetail){
+
+        setProjectDetail((prev:ProjectDetail[] | null)=>[...prev!,obj]);
+        }else{
+          setProjectDetail([obj]);
+        }
     } catch (err:any) { 
+      console.log(err)
       console.log(err.response.data.message)
       alert("URL creation failed"+err.response.data.message
       );
