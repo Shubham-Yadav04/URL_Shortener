@@ -22,7 +22,7 @@ public class AnalyticController {
     private final AnalyticService analyticService;
 private final AnalyticSummaryService analyticSummaryService;
     @GetMapping("/7Day/{mappingId}")
-    public List<DailyCountDTO> last7DayAnalysis(@PathVariable("mappingId") String mappingId){
+    public List<DailyCountDTO> last7DayAnalysis(@PathVariable("mappingId") Long mappingId){
         try{
             return analyticService.last7DayAnalysis(mappingId);
         } catch (RuntimeException e) {
@@ -40,7 +40,7 @@ private final AnalyticSummaryService analyticSummaryService;
 
             return new ResponseEntity<>(new AnalyticSummaryDTO(), HttpStatus.ACCEPTED);
         } catch (RuntimeException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(e.getMessage());
         }
 
     }

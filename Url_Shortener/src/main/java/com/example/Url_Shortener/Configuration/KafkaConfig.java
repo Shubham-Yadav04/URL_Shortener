@@ -4,10 +4,12 @@ package com.example.Url_Shortener.Configuration;
 import com.example.Url_Shortener.DTO.KafkaDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ContainerProperties;
@@ -59,5 +61,13 @@ public class KafkaConfig {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         return mapper;
+    }
+
+    @Bean("redirectEvent")
+    public NewTopic redirectEventTopic(){
+return TopicBuilder.name("redirectEvent")
+        .partitions(2)
+        .replicas(1)
+        .build();
     }
 }

@@ -85,9 +85,6 @@ private final  CustomUserDetailService customUserDetailService;
                         filterChain.doFilter(request, response);
                         return;
                     }
-                    else {
-                        throw  new LoginException("unauthorized ");
-                    }
                 }
 
             } catch (RuntimeException e) {

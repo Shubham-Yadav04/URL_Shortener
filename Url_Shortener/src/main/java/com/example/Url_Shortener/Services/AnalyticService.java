@@ -81,7 +81,7 @@ HashOperations<String,String,Long> hashOperations=redisTemplate.opsForHash();
         return value != null && !value.isEmpty() ? value : "none";
     }
 
-    public AnalyticSummaryDTO getAnalyticSummary(String mappingId){
+    public AnalyticSummaryDTO getAnalyticSummary(Long mappingId){
         try{
             return analyticRepository.getAnalyticSummary(mappingId);
         } catch (RuntimeException e) {
@@ -89,7 +89,7 @@ HashOperations<String,String,Long> hashOperations=redisTemplate.opsForHash();
         }
     }
 
-    public List<DailyCountDTO> last7DayAnalysis(String mappingId){
+    public List<DailyCountDTO> last7DayAnalysis(Long mappingId){
         try{
             return analyticRepository.last7DaysSummary(mappingId);
         } catch (RuntimeException e) {

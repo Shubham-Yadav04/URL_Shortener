@@ -12,7 +12,8 @@ public class AnalyticSummaryService {
     private final AnalyticSummaryRepository analyticSummaryRepository;
     public AnalyticSummaryDTO getSummary(Long mappingId){
         try{
-            AnalyticSummary summary= analyticSummaryRepository.findByMappingId( mappingId);
+            AnalyticSummary summary= analyticSummaryRepository.findByMappingIdMappingId( mappingId);
+            if(summary==null) return null;
             return AnalyticSummaryDTO.builder()
                     .topCountry(summary.getTopCountry())
                     .topPlatform(summary.getTopPlatform())

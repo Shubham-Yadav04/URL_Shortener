@@ -14,6 +14,7 @@ public class RedirectProducer {
     }
 
     public void produceRedirect(KafkaDTO kafkaDTO){
+        System.out.println("Adding the event in the kafka ");
         kafkaTemplate.send("redirectEvent",kafkaDTO);
     }
 }

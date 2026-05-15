@@ -28,7 +28,7 @@ public class Analytic {
    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(name = "mapping_id")
-    private String mappingId;
+    private Long mappingId;
 
     @Column(name = "date")
     private LocalDateTime date;

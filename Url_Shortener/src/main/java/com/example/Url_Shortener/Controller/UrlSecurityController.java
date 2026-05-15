@@ -81,16 +81,16 @@ public class UrlSecurityController {
         UrlMapping mapping= mappingRepository.findByShortCode(verifyPasswordDTO.getShortCode()).orElseThrow();
         boolean valid = securityService.verifyPassword(mapping,verifyPasswordDTO.getPassword());
 if(valid){
-////    redirectProducer.produceRedirect(KafkaDTO.builder()
-//            .mappingId(mapping.getMappingId())
-//                    .date(LocalDateTime.now())
-//            .deviceType(request.getHeader("deviceType"))
-//                    .country(request.getHeader("country"))
-//            .referrer(request.getHeader("Referer"))
-//            .build());
+    redirectProducer.produceRedirect(KafkaDTO.builder()
+            .mappingId(mapping.getMappingId())
+                    .date(LocalDateTime.now())
+            .deviceType(request.getHeader("deviceType"))
+                    .country(request.getHeader("country"))
+            .referrer(request.getHeader("Referer"))
+            .build());
     response.sendRedirect(mapping.getLongUrl().toString());
+    return;
 }
-
-throw new ProtectedRoute("unauthorized ");
+    throw new ProtectedRoute("Not Authorized to open Access Link");
     }
 }

@@ -32,6 +32,7 @@ public class ClickEventConsumer {
         // consume the click event and update the uniqueCount value in the redis for the mappingId
         try {
             // 1. process event
+            System.out.println("updating redis ");
             analyticService.updateRedis(kafkaDTO); // for the direct update in the redis
             // 2. commit offset ONLY after success
             ack.acknowledge();
@@ -50,6 +51,7 @@ public class ClickEventConsumer {
     public void updateDBAnalytic(List<ConsumerRecord<String,KafkaDTO>> events, Acknowledgment ack){
         try {
             // 1. process event
+            System.out.println("applying batch operation on db");
             Map<CountryKey, Long> aggregated_country = new HashMap<>();
             Map<DeviceKey, Long> aggregated_device = new HashMap<>();
             Map<PlatformKey, Long> aggregated_platform = new HashMap<>();
@@ -73,29 +75,30 @@ public class ClickEventConsumer {
             }
 
             String country_SQL= """
-                     INSERT INTO analytics_country_summary
-                                    (mapping_id, country, count)
-                                    VALUES (?, ?, ?)
-                                    ON DUPLICATE KEY UPDATE
-                                    count = count + VALUES(count)
+                     INSERT INTO analytic_country_summary
+                     (mapping, country, count)
+                     VALUES (?, ?, ?)
+                     ON CONFLICT (mapping, country)
+                     DO UPDATE SET
+                     count = analytic_country_summary.count + EXCLUDED.count
                     """;
             String device_SQL= """
-                     INSERT INTO analytics_device_summary
-                                    (mapping_id, device, count)
-                                    VALUES (?, ?, ?)
-                                    ON DUPLICATE KEY UPDATE
-                                    count = count + VALUES(count)
+                     INSERT INTO analytic_device_summary
+                     (mapping, device, count)
+                     VALUES (?, ?, ?)
+                     ON CONFLICT (mapping, device)
+                     DO UPDATE SET
+                     count = analytic_device_summary.count + EXCLUDED.count
                     """;
             String platform_SQL= """
-                     INSERT INTO analytics_platform_summary
-                                    (mapping_id, platform, count)
-                                    VALUES (?, ?, ?)
-                                    ON DUPLICATE KEY UPDATE
-                                    count = count + VALUES(count)
+                     INSERT INTO analytic_platform_summary
+                     (mapping, platform, count)
+                     VALUES (?, ?, ?)
+                     ON CONFLICT (mapping, platform)
+                     DO UPDATE SET
+                     count = analytic_platform_summary.count + EXCLUDED.count
                     """;
 transactionTemplate.execute(status-> {
-
-
             jdbcTemplate.batchUpdate(
                     country_SQL,
                     aggregated_country.entrySet(),

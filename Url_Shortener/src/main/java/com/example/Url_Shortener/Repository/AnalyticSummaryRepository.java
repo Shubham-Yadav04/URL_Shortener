@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AnalyticSummaryRepository extends JpaRepository<AnalyticSummary,Long> {
-    AnalyticSummary findByMappingId(Long mappingId);
+    AnalyticSummary findByMappingIdMappingId(Long mappingId);
 }

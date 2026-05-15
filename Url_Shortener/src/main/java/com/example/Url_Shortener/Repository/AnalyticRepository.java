@@ -48,7 +48,7 @@ SELECT
 FROM analytic
 WHERE mapping_id = :mappingId
 """, nativeQuery = true)
-    AnalyticSummaryDTO getAnalyticSummary(String mappingId);
+    AnalyticSummaryDTO getAnalyticSummary(Long mappingId);
 
 @Query(
         value = """
@@ -61,5 +61,5 @@ WHERE mapping_id = :mappingId
     ORDER BY day
 """, nativeQuery = true
 )
-    List<DailyCountDTO> last7DaysSummary(String mappingId);
+    List<DailyCountDTO> last7DaysSummary(Long mappingId);
 }
