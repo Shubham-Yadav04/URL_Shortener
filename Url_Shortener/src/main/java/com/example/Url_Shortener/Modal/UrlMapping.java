@@ -14,9 +14,6 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Table(
-        indexes = {
-                @Index(name = "idx_shortcode", columnList = "short_code")
-        },
         uniqueConstraints ={
                 @UniqueConstraint(
                         columnNames = {"user_id", "long_url"}

@@ -9,9 +9,11 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 @Table(
-                indexes = {
-                        @Index(name="mapping_country_index" ,columnList = "mapping, country")
-                }
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        columnNames = {"mapping", "country"}
+                ),
+        }
 )
 public class AnalyticCountrySummary{
     @Id

@@ -10,8 +10,10 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 @Table(
-        indexes = {
-                @Index(name="mapping_platform_index" ,columnList = "mapping, platform")
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        columnNames = {"mapping", "platform"}
+                ),
         }
 )
 public class AnalyticPlatformSummary{

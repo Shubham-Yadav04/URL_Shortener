@@ -12,8 +12,10 @@ import org.hibernate.mapping.Join;
 @NoArgsConstructor
 @Builder
 @Table(
-        indexes = {
-                @Index(name="mapping_device_index" ,columnList = "mapping, device")
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        columnNames = {"mapping", "device"}
+                ),
         }
 )
 public class AnalyticDeviceSummary{
