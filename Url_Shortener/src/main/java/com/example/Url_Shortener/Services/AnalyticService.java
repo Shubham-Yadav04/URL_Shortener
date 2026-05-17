@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -22,39 +23,32 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class AnalyticService {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
     private final AnalyticRepository analyticRepository;
-    public AnalyticService(@Qualifier("analytic") RedisTemplate<String, Object> redisTemplate,AnalyticRepository analyticRepository) {
-        this.redisTemplate = redisTemplate;
+    public AnalyticService( StringRedisTemplate stringRedisTemplate,AnalyticRepository analyticRepository) {
+        this.stringRedisTemplate = stringRedisTemplate;
         this.analyticRepository=analyticRepository;
     }
     public void updateRedis(KafkaDTO event) {
 
-        Long mappingId = event.getMappingId();
-HashOperations<String,String,Long> hashOperations=redisTemplate.opsForHash();
-        // Keys
-        String hashKey="hash:"+mappingId;
-        Duration ttl = Duration.ofHours(24);
-        String countryKey="countryKey:" + safe(event.getCountry());
-        String deviceKey="deviceKey:" + safe(event.getDeviceType());
-        String platformKey="platformKey:" + safe(event.getReferrer());
-        boolean isAnalyticPresent=redisTemplate.hasKey(hashKey);
-        if(isAnalyticPresent) {
-            hashOperations.increment(hashKey, countryKey,1);
-            hashOperations.increment(hashKey, deviceKey,1);
-            hashOperations.increment(hashKey, platformKey,1);
-            hashOperations.increment(hashKey,"totalCount",1);
-        }
-        else {
-            // we have to create an analytic hash
-            Map<String,Long> map= new HashMap<>();
-            map.put(countryKey,1L);
-            map.put(deviceKey,1L);
-            map.put(platformKey,1L);
-            map.put("totalCount",1L);
-            hashOperations.putAll(hashKey,map);
-        }
-        redisTemplate.expire(hashKey,ttl);
+        HashOperations<String, String, String> hashOps =
+                stringRedisTemplate.opsForHash();
+
+        String hashKey = "hash:" + event.getMappingId();
+
+        hashOps.increment(hashKey,
+                "country:" + safe(event.getCountry()), 1);
+
+        hashOps.increment(hashKey,
+                "device:" + safe(event.getDeviceType()), 1);
+
+        hashOps.increment(hashKey,
+                "platform:" + safe(event.getReferrer()), 1);
+
+        hashOps.increment(hashKey,
+                "totalCount", 1);
+
+        stringRedisTemplate.expire(hashKey, Duration.ofHours(24));
     }
     public Map<RedirectAnalyticDTO, Long> aggregateBatch(List<KafkaDTO> events) {
 

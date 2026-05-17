@@ -62,13 +62,6 @@ public class ClickEventConsumer {
                 String country= safeKey(detail.getCountry());
                 String device=safeKey(detail.getDeviceType());
                 String platform= safeKey(detail.getReferrer());
-                CountryKey countryKey=
-                        new CountryKey(mappingId, country);
-                DeviceKey deviceKey=
-                        new DeviceKey(mappingId, device);
-                PlatformKey platformKey=
-                        new PlatformKey(mappingId, platform);
-
                 aggregated_country.merge(new CountryKey(mappingId, country), 1L, Long::sum);
                 aggregated_device.merge(new DeviceKey(mappingId, device), 1L, Long::sum);
                 aggregated_platform.merge(new PlatformKey(mappingId, platform), 1L, Long::sum);

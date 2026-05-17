@@ -29,7 +29,6 @@ public class Analytic {
     private Long id;
     @Column(name = "mapping_id")
     private Long mappingId;
-
     @Column(name = "date")
     private LocalDateTime date;
     @Column(name = "country")

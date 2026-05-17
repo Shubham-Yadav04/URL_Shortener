@@ -17,7 +17,7 @@ import lombok.*;
 )
 public class AnalyticCountrySummary{
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @ManyToOne
     @JoinColumn(name = "mapping")
