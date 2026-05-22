@@ -14,41 +14,6 @@ import java.util.List;
 @Repository
 public interface AnalyticRepository extends JpaRepository<Analytic,Long>{
 
-    @Query(
-            value = """
-SELECT
-    COUNT(*) AS totalCount,
-    (
-        SELECT country ,COUNT(*) as countryTraffic
-        FROM analytic
-        WHERE mapping_id = :mappingId
-        GROUP BY country
-        ORDER BY COUNT(*) DESC
-        LIMIT 1
-    ) AS topCountry,
-
-    (
-        SELECT device,COUNT(*) AS deviceCount
-        FROM analytic
-        WHERE mapping_id = :mappingId
-        GROUP BY device
-        ORDER BY COUNT(*) DESC
-        LIMIT 1
-    ) AS topDevice,
-
-    (
-        SELECT platform ,COUNT(*) as platformCount;
-        FROM analytic
-        WHERE mapping_id = :mappingId
-        GROUP BY platform
-        ORDER BY COUNT(*) DESC
-        LIMIT 1
-    ) AS topPlatform
-
-FROM analytic
-WHERE mapping_id = :mappingId
-""", nativeQuery = true)
-    AnalyticSummaryDTO getAnalyticSummary(Long mappingId);
 
 @Query(
         value = """
@@ -62,4 +27,40 @@ WHERE mapping_id = :mappingId
 """, nativeQuery = true
 )
     List<DailyCountDTO> last7DaysSummary(Long mappingId);
+
+
+    @Query(
+            value = """
+SELECT
+    (
+        SELECT SUM(count)
+        FROM analytic_country_summary
+        WHERE mapping = :mappingId
+    ) AS totalCount,
+
+    (
+        SELECT country
+        FROM analytic_country_summary
+        WHERE mapping = :mappingId
+        ORDER BY count DESC
+        LIMIT 1
+    ) AS topCountry,
+
+    (
+        SELECT device
+        FROM analytic_device_summary
+        WHERE mapping = :mappingId
+        ORDER BY count DESC
+        LIMIT 1
+    ) AS topDevice,
+
+    (
+        SELECT platform
+        FROM analytic_platform_summary
+        WHERE mapping = :mappingId
+        ORDER BY count DESC
+        LIMIT 1
+    ) AS topPlatform;
+""", nativeQuery = true)
+    AnalyticSummaryDTO getAnalyticSummary(Long mappingId);
 }

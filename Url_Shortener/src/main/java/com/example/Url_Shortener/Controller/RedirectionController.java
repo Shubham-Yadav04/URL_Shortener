@@ -62,6 +62,15 @@ public class RedirectionController {
                 mappingService.getByShortCode(shortCode);
         if (mapping.getUrlConfig().isProtected()) {
             model.addAttribute("shortCode", shortCode);
+            redisTemplate.opsForValue().set(shortCode,
+                    RedisMappingDTO.builder()
+                            .mappingId(mapping.getMappingId())
+                            .isProtected(mapping.getUrlConfig().isProtected())
+                            .longUrl(mapping.getLongUrl().toString())
+                            .build()
+                    ,
+                    20, TimeUnit.MINUTES
+            );
             return "PasswordVerification";
         }
         if (mapping.getLongUrl() != null) {

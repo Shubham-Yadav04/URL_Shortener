@@ -2,6 +2,7 @@ package com.example.Url_Shortener.Services;
 
 import com.example.Url_Shortener.DTO.KafkaDTO;
 
+import com.example.Url_Shortener.Modal.Analytic;
 import com.example.Url_Shortener.Records.CountryKey;
 import com.example.Url_Shortener.Records.DeviceKey;
 import com.example.Url_Shortener.Records.PlatformKey;
@@ -34,6 +35,14 @@ public class ClickEventConsumer {
             // 1. process event
             System.out.println("updating redis ");
             analyticService.updateRedis(kafkaDTO); // for the direct update in the redis
+            // save this in the database also
+            Analytic analytic= Analytic.builder()
+                    .country(kafkaDTO.getCountry())
+                    .device(kafkaDTO.getDeviceType())
+                    .mappingId(kafkaDTO.getMappingId())
+                    .platform(kafkaDTO.getReferrer())
+                    .build();
+            analyticService.save(analytic);
             // 2. commit offset ONLY after success
             ack.acknowledge();
         } catch (Exception e) {
