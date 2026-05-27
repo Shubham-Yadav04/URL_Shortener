@@ -7,6 +7,7 @@ import com.example.Url_Shortener.ExceptionHandler.Exceptions.ProtectedRoute;
 import com.example.Url_Shortener.Modal.UrlMapping;
 import com.example.Url_Shortener.Repository.MappingRepository;
 import com.example.Url_Shortener.Services.RedirectProducer;
+import com.example.Url_Shortener.Services.RequestService;
 import com.example.Url_Shortener.Services.UrlSecurityService;
 import com.example.Url_Shortener.Services.UtilService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,7 +33,7 @@ public class UrlSecurityController {
     private final RedirectProducer redirectProducer;
     private final UtilService utilService;
     private final RedisTemplate<String, RedisMappingDTO> redisTemplate;
-
+private final RequestService requestService;
     @PostMapping("/{id}/protect")
     public ResponseEntity<?> protectUrl(
             @PathVariable Long id,
@@ -84,8 +85,8 @@ if(valid){
     redirectProducer.produceRedirect(KafkaDTO.builder()
             .mappingId(mapping.getMappingId())
                     .date(LocalDateTime.now())
-            .deviceType(request.getHeader("deviceType"))
-                    .country(request.getHeader("country"))
+            .deviceType(requestService.resolveDeviceType(request))
+                    .country(requestService.resolveCountry(request))
             .referrer(request.getHeader("Referer"))
             .build());
     response.sendRedirect(mapping.getLongUrl().toString());

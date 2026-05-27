@@ -6,6 +6,7 @@ import com.example.Url_Shortener.DTO.RedisMappingDTO;
 import com.example.Url_Shortener.Modal.UrlMapping;
 import com.example.Url_Shortener.Services.MappingService;
 import com.example.Url_Shortener.Services.RedirectProducer;
+import com.example.Url_Shortener.Services.RequestService;
 import com.example.Url_Shortener.Services.UtilService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -36,6 +37,7 @@ public class RedirectionController {
     private final RedisTemplate<String, RedisMappingDTO> redisTemplate;
     private final RedirectProducer redirectProducer;
     private final UtilService utilService;
+    private final RequestService requestService;
 
     @GetMapping("/r/{shortCode}")
     public String getMapping(
@@ -52,8 +54,8 @@ public class RedirectionController {
         redirectProducer.produceRedirect(KafkaDTO.builder()
                 .mappingId(cache.getMappingId())
                         .date(LocalDateTime.now())
-                .deviceType(request.getHeader("deviceType"))
-                .country(request.getHeader("country"))
+                .deviceType(requestService.resolveDeviceType(request))
+                .country(requestService.resolveCountry(request))
                 .referrer(request.getHeader("Referer"))
                 .build());
        return "redirect:"+cache.getLongUrl();
@@ -87,8 +89,8 @@ public class RedirectionController {
             redirectProducer.produceRedirect(KafkaDTO.builder()
                             .date(LocalDateTime.now())
                     .mappingId(mapping.getMappingId())
-                    .deviceType(request.getHeader("deviceType"))
-                    .country(request.getHeader("country"))
+                    .deviceType(requestService.resolveDeviceType(request))
+                    .country(requestService.resolveCountry(request))
                     .referrer(request.getHeader("Referer"))
                     .build());
             return "redirect:" + mapping.getLongUrl().toString();
