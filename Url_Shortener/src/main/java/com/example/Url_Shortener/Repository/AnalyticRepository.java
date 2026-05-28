@@ -6,6 +6,7 @@ import com.example.Url_Shortener.DTO.DailyCountDTO;
 import com.example.Url_Shortener.Modal.Analytic;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -33,7 +34,7 @@ public interface AnalyticRepository extends JpaRepository<Analytic,Long>{
             value = """
 SELECT
     (
-        SELECT SUM(count)
+        SELECT CAST(SUM(count) AS BIGINT)
         FROM analytic_country_summary
         WHERE mapping = :mappingId
     ) AS totalCount,
@@ -62,5 +63,5 @@ SELECT
         LIMIT 1
     ) AS topPlatform;
 """, nativeQuery = true)
-    AnalyticSummaryDTO getAnalyticSummary(Long mappingId);
+    AnalyticSummaryDTO getAnalyticSummary(@Param("mappingId") Long mappingId);
 }

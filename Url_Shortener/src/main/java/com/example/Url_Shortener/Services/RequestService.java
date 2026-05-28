@@ -3,11 +3,13 @@ package com.example.Url_Shortener.Services;
 import com.example.Url_Shortener.DTO.GraphqlRequestDTO;
 import com.example.Url_Shortener.DTO.GraphqlResponseDTO;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+@Slf4j
 @Service
 public class RequestService {
 
@@ -17,7 +19,7 @@ public class RequestService {
     RestTemplate restTemplate;
     public String resolveCountry(HttpServletRequest request){
         try{
-
+log.info("the ip address of the user : {}",request.getRemoteAddr());
             String query= """
         query:{
         analyzeIp(ip: "%s"):{
