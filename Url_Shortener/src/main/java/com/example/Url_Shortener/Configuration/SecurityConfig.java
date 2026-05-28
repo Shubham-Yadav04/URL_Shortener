@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -33,6 +34,8 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests( request->
                         request.requestMatchers("/user/**").permitAll()
+                                .requestMatchers("/r/**").permitAll()
+                                .requestMatchers("/verify/**").permitAll()
                                 .anyRequest().permitAll()
                         ).
                 addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
@@ -61,5 +64,10 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", config);
 
         return source;
+    }
+
+    @Bean
+    RestTemplate restTemplate(){
+        return  new RestTemplate();
     }
 }
