@@ -79,15 +79,16 @@ private final RequestService requestService;
             HttpServletResponse response,
             HttpServletRequest request
             ) throws IOException {
+
         UrlMapping mapping= mappingRepository.findByShortCode(verifyPasswordDTO.getShortCode()).orElseThrow();
         boolean valid = securityService.verifyPassword(mapping,verifyPasswordDTO.getPassword());
 if(valid){
     redirectProducer.produceRedirect(KafkaDTO.builder()
             .mappingId(mapping.getMappingId())
                     .date(LocalDateTime.now())
-            .deviceType(requestService.resolveDeviceType(request))
-                    .country(requestService.resolveCountry(request))
-            .referrer(request.getHeader("Referer"))
+            .deviceType(verifyPasswordDTO.getDeviceType())
+                    .country(verifyPasswordDTO.getCountry())
+            .referrer(verifyPasswordDTO.getReferrer())
             .build());
     response.sendRedirect(mapping.getLongUrl().toString());
     return;

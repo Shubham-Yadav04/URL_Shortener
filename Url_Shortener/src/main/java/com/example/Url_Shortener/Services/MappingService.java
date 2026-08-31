@@ -73,12 +73,11 @@ this.redisTemplate= redisTemplate;
         String code=request.getShortCode();
         String longUrl= request.getLongURL();
         String projectName= request.getProjectName();
-        boolean isProtected= request.getIsProtected() != null;
       if(mappingRepository.findByShortCode(code).isPresent()) throw new InValidShortCode("short code already exists");
       UrlMapping mapping =  mappingRepository.save(UrlMapping.builder()
                 .longUrl(new URL(longUrl))
                 .owner(owner)
-                      .projectName(projectName)
+              .projectName(projectName)
                 .build());
         try {
             String shortCode="";
@@ -89,8 +88,8 @@ shortCode=code.trim();
             URL shortUrl= new URL(shortBaseUrl+shortCode);
           mapping.setShortCode(shortCode);
 //              byte [] qrCode=generateQR(shortCode);
-              UrlConfig requestURLConfig= UrlConfig.builder().isProtected(isProtected).build();
-              if(isProtected) {
+              UrlConfig requestURLConfig= UrlConfig.builder().isProtected(request.getIsProtected()).build();
+              if(request.getIsProtected()) {
                   String passwordHash= passwordEncoder.encode(password);
                   requestURLConfig.setPasswordHash(passwordHash);
               }

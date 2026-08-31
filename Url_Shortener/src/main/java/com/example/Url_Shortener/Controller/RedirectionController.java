@@ -43,70 +43,58 @@ public class RedirectionController {
     public String getMapping(
             @PathVariable String shortCode, HttpServletRequest request, HttpServletResponse response, Model model) throws IOException {
         RedisMappingDTO cache=redisTemplate.opsForValue().get(shortCode);
+        String country= requestService.resolveCountry(request);
+        String referrer= request.getHeader("Referer");
+        String deviceType= requestService.resolveDeviceType(request);
     if (cache != null) {
-        System.out.println(cache.toString());
         if (cache.getIsProtected() != null && cache.getIsProtected()) {
             // then provide a page asking for the password then verify the submission if ok the redirect
             model.addAttribute("shortCode", shortCode);
+            model.addAttribute("referrer",referrer);
+            model.addAttribute("country",country);
+            model.addAttribute("device",deviceType);
             return "PasswordVerification";
         }
 
         redirectProducer.produceRedirect(KafkaDTO.builder()
                 .mappingId(cache.getMappingId())
                         .date(LocalDateTime.now())
-                .deviceType(requestService.resolveDeviceType(request))
-                .country(requestService.resolveCountry(request))
-                .referrer(request.getHeader("Referer"))
+                .deviceType(deviceType)
+                .country(country)
+                .referrer(referrer)
                 .build());
        return "redirect:"+cache.getLongUrl();
     } else {
-        UrlMapping mapping =
-                mappingService.getByShortCode(shortCode);
+        UrlMapping mapping = mappingService.getByShortCode(shortCode);
+        redisTemplate.opsForValue().set(shortCode,
+                RedisMappingDTO.builder()
+                        .mappingId(mapping.getMappingId())
+                        .isProtected(mapping.getUrlConfig().isProtected())
+                        .longUrl(mapping.getLongUrl().toString())
+                        .build()
+                ,
+                20, TimeUnit.MINUTES
+        );
         if (mapping.getUrlConfig().isProtected()) {
             model.addAttribute("shortCode", shortCode);
-            redisTemplate.opsForValue().set(shortCode,
-                    RedisMappingDTO.builder()
-                            .mappingId(mapping.getMappingId())
-                            .isProtected(mapping.getUrlConfig().isProtected())
-                            .longUrl(mapping.getLongUrl().toString())
-                            .build()
-                    ,
-                    20, TimeUnit.MINUTES
-            );
+            model.addAttribute("referrer",referrer);
+            model.addAttribute("country",country);
+            model.addAttribute("device",deviceType);
+
             return "PasswordVerification";
         }
         if (mapping.getLongUrl() != null) {
-            redisTemplate.opsForValue().set(shortCode,
-                    RedisMappingDTO.builder()
-                            .mappingId(mapping.getMappingId())
-                            .isProtected(mapping.getUrlConfig().isProtected())
-                            .longUrl(mapping.getLongUrl().toString())
-                            .build()
-                    ,
-                    20, TimeUnit.MINUTES
-            );
-//             before actual redirect create a redirectEvent in kafka.
+
             redirectProducer.produceRedirect(KafkaDTO.builder()
                             .date(LocalDateTime.now())
                     .mappingId(mapping.getMappingId())
-                    .deviceType(requestService.resolveDeviceType(request))
-                    .country(requestService.resolveCountry(request))
-                    .referrer(request.getHeader("Referer"))
+                    .deviceType(deviceType)
+                    .country(country)
+                    .referrer(referrer)
                     .build());
             return "redirect:" + mapping.getLongUrl().toString();
         }
     }
 throw new  RuntimeException("error in redirect");
     }
-//    @ResponseBody
-//    @GetMapping("/qr/{shortCode}")
-//    public ResponseEntity<byte[]> getQrForURL(@PathVariable("shortCode") String shortCode){
-//        try{
-//            byte[] qrCode= mappingService.generateQR(shortCode);
-//            return new ResponseEntity<>(qrCode, HttpStatus.CREATED);
-//        } catch (RuntimeException e) {
-//            throw new QRCodeGenerationError(e.getMessage());
-//        }
-//
-//    }
 }

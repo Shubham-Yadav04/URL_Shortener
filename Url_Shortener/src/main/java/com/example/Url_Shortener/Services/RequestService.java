@@ -1,7 +1,7 @@
 package com.example.Url_Shortener.Services;
 
 import com.example.Url_Shortener.DTO.GraphqlRequestDTO;
-import com.example.Url_Shortener.DTO.GraphqlResponseDTO;
+import com.example.Url_Shortener.DTO.GraphqlResDataDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,18 +27,17 @@ log.info("the ip address of the user : {}",request.getRemoteAddr());
         }
         """.formatted(request.getRemoteAddr());
             GraphqlRequestDTO graphqlRequest= new GraphqlRequestDTO(query);
-            GraphqlResponseDTO res= restTemplate.postForObject(graphqlEndpoint,graphqlRequest,
-        GraphqlResponseDTO.class);
+            GraphqlResDataDTO res= restTemplate.postForObject(graphqlEndpoint,graphqlRequest,
+        GraphqlResDataDTO.class);
 
             if (res == null ||
-                    res.getData() == null ||
-                    res.getData().getAnalyzeIp() == null ||
-                    res.getData().getAnalyzeIp().getCountry() == null ||
-                    res.getData().getAnalyzeIp().getCountry().isBlank()) {
+                    res.getAnalyzeIp() == null ||
+                    res.getAnalyzeIp().getCountry() == null ||
+                    res.getAnalyzeIp().getCountry().isBlank()) {
 
                 return "NIL";
             }
-            return res.getData().getAnalyzeIp().getCountry();
+            return res.getAnalyzeIp().getCountry();
         } catch (RuntimeException e) {
             return "NIL";
         }

@@ -13,4 +13,7 @@ public class VerifyPasswordDTO {
 
     private String shortCode;
    private  String password;
+   private String country;
+   private String referrer;
+   private String deviceType;
 }

@@ -40,7 +40,7 @@ public class AnalyticSummaryService {
             hashOperations.putAll(key,updateCache);
             stringRedisTemplate.expire(
                     key,
-                    Duration.ofMinutes(30)
+                    Duration.ofMinutes(5)
             );
             return AnalyticSummaryDTO.builder()
                     .topCountry(summary.getTopCountry())

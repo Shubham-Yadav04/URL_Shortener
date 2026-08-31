@@ -56,8 +56,6 @@ public class AnalyticService {
     }
     public Map<RedirectAnalyticDTO, Long> aggregateBatch(List<KafkaDTO> events) {
 
-        System.out.println("applying batch operation ");
-        System.out.println(events.toString());
         Map<RedirectAnalyticDTO, Long> batchAggregation = new HashMap<>();
 
         for (KafkaDTO event : events) {
