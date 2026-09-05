@@ -3,7 +3,17 @@ package com.example.Url_Shortener.Controller;
 import com.example.Url_Shortener.DTO.CreateRequestDTO;
 import com.example.Url_Shortener.DTO.MappingListDTO;
 import com.example.Url_Shortener.DTO.UrlMappingDTO;
+import com.example.Url_Shortener.Records.CountryAnalytic;
+import com.example.Url_Shortener.Records.DeviceAnalytic;
+import com.example.Url_Shortener.Records.PlatformAnalytic;
+import com.example.Url_Shortener.Repository.AnalyticRepository;
+import com.example.Url_Shortener.Repository.CountrySummaryRepository;
+import com.example.Url_Shortener.Services.CountryAnalyticService;
+import com.example.Url_Shortener.Services.DeviceSummaryService;
 import com.example.Url_Shortener.Services.MappingService;
+import com.example.Url_Shortener.Services.PlatformSummaryService;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
@@ -15,14 +25,22 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("mapping")
+
 public class MappingController {
 
 
     private final MappingService mappingService;
+
+    private final DeviceSummaryService deviceSummaryService;
+    private final PlatformSummaryService platformSummaryService;
+    private final CountryAnalyticService countrySummaryService;
 private  final RedisTemplate<String,Object> redisTemplate;
 
-    public MappingController(MappingService mappingService,@Qualifier("analytic") RedisTemplate<String,Object> redisTemplate) {
+    public MappingController(MappingService mappingService, DeviceSummaryService deviceSummaryService, PlatformSummaryService platformSummaryService, CountryAnalyticService countrySummaryService, @Qualifier("analytic") RedisTemplate<String,Object> redisTemplate) {
         this.mappingService = mappingService;
+        this.deviceSummaryService = deviceSummaryService;
+        this.platformSummaryService = platformSummaryService;
+        this.countrySummaryService = countrySummaryService;
         this.redisTemplate=redisTemplate;
     }
 
@@ -98,5 +116,18 @@ try{
 
         mappingService.deleteMapping(mappingId);
         return ResponseEntity.noContent().build();
+    }
+
+
+    @GetMapping("/{mappingId}/country/")
+    public List<CountryAnalytic> getCountryWiseAnalytic(@PathVariable("mappingId") String mappingId){
+        return countrySummaryService.getCountryBasedAnalysis(mappingId);
+    }
+    @GetMapping("/{mappingId}/device/")
+    public List<DeviceAnalytic> getDeviceWiseAnalytic(@PathVariable("mappingId") String mappingId){
+        return deviceSummaryService.getDeviceAnalyticByMappingId(mappingId);
+    }   @GetMapping("/{mappingId}/platform/")
+    public List<PlatformAnalytic> getPlatformWiseAnalytic(@PathVariable("mappingId") String mappingId){
+        return platformSummaryService.getPlatformAnalyticByMappingId(mappingId);
     }
 }
