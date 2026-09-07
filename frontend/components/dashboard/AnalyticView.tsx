@@ -1,13 +1,15 @@
 import { motion } from "motion/react"
 import { useEffect, useState } from "react"
-import { Copy, Check, BarChart3, Globe, Smartphone, MousePointerClick } from "lucide-react"
+import { Copy, Check, BarChart3, Globe, Smartphone, MousePointerClick, Sparkles, ArrowRight } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 import { useAnalytic } from "@/context/AnalyticContext";
 import { useAuth ,ProjectDetail} from "@/context/AuthContext";
+import DetailedAnalyticsView from "@/components/dashboard/DetailedAnalyticsView";
 
 
 export default function AnalyticsView({ id }: { id: string }) {
   const [urlData, setUrlData] = useState<any>(null);
+  const [showDetailedView, setShowDetailedView] = useState<boolean>(false);
 const {projectSummary,setProjectSummary} = useAnalytic();
 const BACKEND_URL="http://localhost:8080"
 useEffect(()=>{
@@ -62,11 +64,33 @@ else {
       </div>
     )
   }
+
+  if (showDetailedView) {
+    return (
+      <DetailedAnalyticsView
+        urlData={urlData}
+        onBack={() => setShowDetailedView(false)}
+      />
+    );
+  }
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-8">
-      <div className="mb-2 pt-4 px-2">
-        <h1 className="font-heading text-3xl font-bold tracking-tight text-white mb-2">{urlData.projectName}</h1>
-        <p className="text-sm text-gray-400 break-all">{urlData.longURL}</p>
+      <div className="mb-2 pt-4 px-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-heading text-3xl font-bold tracking-tight text-white mb-1">{urlData.projectName || "URL Analytics"}</h1>
+          <p className="text-sm text-gray-400 break-all">{urlData.longURL}</p>
+        </div>
+
+        {/* Detailed Analytics Button */}
+        <button
+          onClick={() => setShowDetailedView(true)}
+          className="group relative inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-white text-black font-semibold text-xs sm:text-sm shadow-[0_0_25px_rgba(255,255,255,0.15)] hover:bg-gray-100 hover:shadow-[0_0_35px_rgba(255,255,255,0.25)] transition-all duration-300 transform active:scale-95 shrink-0"
+        >
+          <Sparkles size={16} className="text-amber-500 group-hover:rotate-12 transition-transform duration-300" />
+          <span>Detailed Analytics</span>
+          <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform duration-300" />
+        </button>
       </div> 
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
