@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "motion/react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Globe,
   Smartphone,
@@ -12,6 +12,7 @@ import {
   Monitor,
   Tablet,
 } from "lucide-react";
+import axios from "axios";
 
 interface DetailedAnalyticsViewProps {
   urlData: any;
@@ -20,6 +21,24 @@ interface DetailedAnalyticsViewProps {
 
 type TabType = "country" | "device" | "platform";
 
+interface CountryAnalytic {
+  mappingId: number;
+  country: string;
+  count: number;
+}
+
+interface DeviceAnalytic {
+  mappingId: number;
+  device: string;
+  count: number;
+}
+
+interface PlatformAnalytic {
+  mappingId: number;
+  platform: string;
+  count: number;
+}
+
 export default function DetailedAnalyticsView({
   urlData,
   onBack,
@@ -27,58 +46,44 @@ export default function DetailedAnalyticsView({
   const [activeTab, setActiveTab] = useState<TabType>("country");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
-  const totalClicks = urlData?.totalCount || 1248;
+  const [countryData, setCountryData] = useState<CountryAnalytic[]>([]);
+  const [deviceData, setDeviceData] = useState<DeviceAnalytic[]>([]);
+  const [platformData, setPlatformData] = useState<PlatformAnalytic[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // Granular analytics datasets
-  const countryData = useMemo(
-    () => [
-      { code: "US", name: "United States", clicks: Math.round(totalClicks * 0.42), flag: "🇺🇸" },
-      { code: "IN", name: "India", clicks: Math.round(totalClicks * 0.22), flag: "🇮🇳" },
-      { code: "DE", name: "Germany", clicks: Math.round(totalClicks * 0.12), flag: "🇩🇪" },
-      { code: "GB", name: "United Kingdom", clicks: Math.round(totalClicks * 0.1), flag: "🇬🇧" },
-      { code: "JP", name: "Japan", clicks: Math.round(totalClicks * 0.07), flag: "🇯🇵" },
-      { code: "CA", name: "Canada", clicks: Math.round(totalClicks * 0.04), flag: "🇨🇦" },
-      { code: "FR", name: "France", clicks: Math.round(totalClicks * 0.03), flag: "🇫🇷" },
-    ],
-    [totalClicks]
-  );
+  const totalClicks = urlData?.totalCount || 0;
 
-  const deviceData = useMemo(
-    () => [
-      { type: "Mobile", clicks: Math.round(totalClicks * 0.58), icon: Smartphone, percent: 58 },
-      { type: "Desktop", clicks: Math.round(totalClicks * 0.34), icon: Monitor, percent: 34 },
-      { type: "Tablet", clicks: Math.round(totalClicks * 0.08), icon: Tablet, percent: 8 },
-    ],
-    [totalClicks]
-  );
+  useEffect(() => {
+    if (!urlData?.id) return;
 
-  const osData = useMemo(
-    () => [
-      { name: "iOS", clicks: Math.round(totalClicks * 0.36), share: 36 },
-      { name: "Android", clicks: Math.round(totalClicks * 0.31), share: 31 },
-      { name: "Windows", clicks: Math.round(totalClicks * 0.20), share: 20 },
-      { name: "macOS", clicks: Math.round(totalClicks * 0.10), share: 10 },
-      { name: "Linux", clicks: Math.round(totalClicks * 0.03), share: 3 },
-    ],
-    [totalClicks]
-  );
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
+    const baseUrl = backendUrl.endsWith("/") ? backendUrl : `${backendUrl}/`;
 
-  const browserData = useMemo(
-    () => [
-      { name: "Chrome", clicks: Math.round(totalClicks * 0.52), share: 52 },
-      { name: "Safari", clicks: Math.round(totalClicks * 0.32), share: 32 },
-      { name: "Firefox", clicks: Math.round(totalClicks * 0.09), share: 9 },
-      { name: "Edge", clicks: Math.round(totalClicks * 0.05), share: 5 },
-      { name: "Opera", clicks: Math.round(totalClicks * 0.02), share: 2 },
-    ],
-    [totalClicks]
-  );
+    const fetchAnalyticsData = async () => {
+      setLoading(true);
+      try {
+        const [countryRes, deviceRes, platformRes] = await Promise.all([
+          axios.get<CountryAnalytic[]>(`${baseUrl}mapping/${urlData.id}/country/`).catch(() => ({ data: [] })),
+          axios.get<DeviceAnalytic[]>(`${baseUrl}mapping/${urlData.id}/device/`).catch(() => ({ data: [] })),
+          axios.get<PlatformAnalytic[]>(`${baseUrl}mapping/${urlData.id}/platform/`).catch(() => ({ data: [] })),
+        ]);
+
+        setCountryData(countryRes.data || []);
+        setDeviceData(deviceRes.data || []);
+        setPlatformData(platformRes.data || []);
+      } catch (error) {
+        console.error("Failed to fetch analytics data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalyticsData();
+  }, [urlData?.id]);
 
   const filteredCountries = useMemo(() => {
-    return countryData.filter(
-      (c) =>
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.code.toLowerCase().includes(searchQuery.toLowerCase())
+    return countryData.filter((c) =>
+      (c.country || "").toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [countryData, searchQuery]);
 
@@ -201,39 +206,46 @@ export default function DetailedAnalyticsView({
               </div>
 
               <div className="flex flex-col gap-2.5 mt-1">
-                {filteredCountries.map((c) => {
-                  const percent = Math.round((c.clicks / totalClicks) * 100);
-                  return (
-                    <div
-                      key={c.code}
-                      className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col gap-2 hover:bg-white/[0.04] transition-colors"
-                    >
-                      <div className="flex items-center justify-between text-xs font-normal">
-                        <div className="flex items-center gap-2 text-gray-200">
-                          <span className="text-sm">{c.flag}</span>
-                          <span className="font-medium text-white">{c.name}</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-gray-400">
-                          <span>{c.clicks.toLocaleString()} clicks</span>
-                          <span className="text-white font-medium w-8 text-right">
-                            {percent}%
-                          </span>
-                        </div>
-                      </div>
-                      <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                {loading ? (
+                  <div className="text-center py-6 text-xs text-gray-400">Loading country analytics...</div>
+                ) : (
+                  <>
+                    {filteredCountries.map((c, idx) => {
+                      const count = c.count || 0;
+                      const percent = totalClicks > 0 ? Math.round((count / totalClicks) * 100) : 0;
+                      return (
                         <div
-                          className="h-full bg-white/60 rounded-full transition-all duration-300"
-                          style={{ width: `${Math.max(percent, 2)}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+                          key={c.mappingId || idx}
+                          className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col gap-2 hover:bg-white/[0.04] transition-colors"
+                        >
+                          <div className="flex items-center justify-between text-xs font-normal">
+                            <div className="flex items-center gap-2 text-gray-200">
+                              <Globe size={14} className="text-gray-400" />
+                              <span className="font-medium text-white">{c.country || "Unknown"}</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-gray-400">
+                              <span>{count.toLocaleString()} clicks</span>
+                              <span className="text-white font-medium w-8 text-right">
+                                {percent}%
+                              </span>
+                            </div>
+                          </div>
+                          <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-white/60 rounded-full transition-all duration-300"
+                              style={{ width: `${Math.max(percent, 2)}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
 
-                {filteredCountries.length === 0 && (
-                  <div className="text-center py-6 text-xs text-gray-400">
-                    No matching countries found.
-                  </div>
+                    {filteredCountries.length === 0 && (
+                      <div className="text-center py-6 text-xs text-gray-400">
+                        No matching countries found.
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -256,38 +268,56 @@ export default function DetailedAnalyticsView({
                 <span>Device Category Distribution</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {deviceData.map((d) => {
-                  const Icon = d.icon;
-                  return (
-                    <div
-                      key={d.type}
-                      className="p-4 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between gap-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-gray-300">
-                          {d.type}
-                        </span>
-                        <Icon size={16} className="text-gray-400" />
-                      </div>
-                      <div>
-                        <div className="text-lg font-semibold text-white">
-                          {d.percent}%
+              {loading ? (
+                <div className="text-center py-6 text-xs text-gray-400">Loading device analytics...</div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {deviceData.map((d, idx) => {
+                    const count = d.count || 0;
+                    const percent = totalClicks > 0 ? Math.round((count / totalClicks) * 100) : 0;
+                    const deviceName = d.device || "Other";
+                    const Icon = deviceName.toLowerCase().includes("mobile")
+                      ? Smartphone
+                      : deviceName.toLowerCase().includes("tablet")
+                      ? Tablet
+                      : Monitor;
+
+                    return (
+                      <div
+                        key={d.mappingId || idx}
+                        className="p-4 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between gap-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-gray-300">
+                            {deviceName}
+                          </span>
+                          <Icon size={16} className="text-gray-400" />
                         </div>
-                        <div className="text-xs text-gray-400 font-normal">
-                          {d.clicks.toLocaleString()} clicks
+                        <div>
+                          <div className="text-lg font-semibold text-white">
+                            {percent}%
+                          </div>
+                          <div className="text-xs text-gray-400 font-normal">
+                            {count.toLocaleString()} clicks
+                          </div>
+                        </div>
+                        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden mt-1">
+                          <div
+                            className="h-full bg-white/60 rounded-full transition-all duration-300"
+                            style={{ width: `${Math.max(percent, 2)}%` }}
+                          />
                         </div>
                       </div>
-                      <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden mt-1">
-                        <div
-                          className="h-full bg-white/60 rounded-full transition-all duration-300"
-                          style={{ width: `${d.percent}%` }}
-                        />
-                      </div>
+                    );
+                  })}
+
+                  {deviceData.length === 0 && (
+                    <div className="col-span-3 text-center py-6 text-xs text-gray-400">
+                      No device analytics found.
                     </div>
-                  );
-                })}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -300,72 +330,52 @@ export default function DetailedAnalyticsView({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.15 }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            className="flex flex-col gap-4"
           >
-            {/* OS Breakdown */}
             <div className="bg-white/[0.02] border border-white/10 p-5 rounded-2xl flex flex-col gap-4">
               <div className="flex items-center gap-2 text-sm font-medium text-white">
                 <Laptop size={16} className="text-gray-400" />
-                <span>Operating Systems</span>
+                <span>Platform Breakdown</span>
               </div>
 
-              <div className="flex flex-col gap-2.5">
-                {osData.map((os) => (
-                  <div
-                    key={os.name}
-                    className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col gap-2"
-                  >
-                    <div className="flex items-center justify-between text-xs font-normal">
-                      <span className="font-medium text-white">{os.name}</span>
-                      <div className="flex items-center gap-3 text-gray-400">
-                        <span>{os.clicks.toLocaleString()} clicks</span>
-                        <span className="text-white font-medium w-8 text-right">
-                          {os.share}%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+              {loading ? (
+                <div className="text-center py-6 text-xs text-gray-400">Loading platform analytics...</div>
+              ) : (
+                <div className="flex flex-col gap-2.5">
+                  {platformData.map((p, idx) => {
+                    const count = p.count || 0;
+                    const share = totalClicks > 0 ? Math.round((count / totalClicks) * 100) : 0;
+                    return (
                       <div
-                        className="h-full bg-white/60 rounded-full transition-all duration-300"
-                        style={{ width: `${os.share}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Browser Share */}
-            <div className="bg-white/[0.02] border border-white/10 p-5 rounded-2xl flex flex-col gap-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-white">
-                <Compass size={16} className="text-gray-400" />
-                <span>Browsers</span>
-              </div>
-
-              <div className="flex flex-col gap-2.5">
-                {browserData.map((b) => (
-                  <div
-                    key={b.name}
-                    className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col gap-2"
-                  >
-                    <div className="flex items-center justify-between text-xs font-normal">
-                      <span className="font-medium text-white">{b.name}</span>
-                      <div className="flex items-center gap-3 text-gray-400">
-                        <span>{b.clicks.toLocaleString()} clicks</span>
-                        <span className="text-white font-medium w-8 text-right">
-                          {b.share}%
-                        </span>
+                        key={p.mappingId || idx}
+                        className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col gap-2"
+                      >
+                        <div className="flex items-center justify-between text-xs font-normal">
+                          <span className="font-medium text-white">{p.platform || "Unknown"}</span>
+                          <div className="flex items-center gap-3 text-gray-400">
+                            <span>{count.toLocaleString()} clicks</span>
+                            <span className="text-white font-medium w-8 text-right">
+                              {share}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-white/60 rounded-full transition-all duration-300"
+                            style={{ width: `${Math.max(share, 2)}%` }}
+                          />
+                        </div>
                       </div>
+                    );
+                  })}
+
+                  {platformData.length === 0 && (
+                    <div className="text-center py-6 text-xs text-gray-400">
+                      No platform analytics found.
                     </div>
-                    <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-white/60 rounded-full transition-all duration-300"
-                        style={{ width: `${b.share}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -373,3 +383,4 @@ export default function DetailedAnalyticsView({
     </motion.div>
   );
 }
+
