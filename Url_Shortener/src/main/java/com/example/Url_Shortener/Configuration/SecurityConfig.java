@@ -5,6 +5,7 @@ import com.example.Url_Shortener.Services.CustomUserDetailService;
 import com.example.Url_Shortener.Utils.CustomAuthSuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -36,6 +37,7 @@ public class SecurityConfig {
                         request.requestMatchers("/user/**").permitAll()
                                 .requestMatchers("/r/**").permitAll()
                                 .requestMatchers("/verify/**").permitAll()
+                                .requestMatchers(HttpMethod.GET,"/analytic/**").permitAll()
                                 .anyRequest().permitAll()
                         ).
                 addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)

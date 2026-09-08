@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -17,17 +18,20 @@ public interface AnalyticRepository extends JpaRepository<Analytic,Long>{
 
 
 @Query(
-        value = """
-    SELECT DATE(a.date) AS day,
-           COUNT(*) AS total
-    FROM your_table a
-    WHERE a.mapping_id = :mappingId
-      AND a.date >= NOW() - INTERVAL 7 DAY
-    GROUP BY DATE(a.date)
-    ORDER BY day
-""", nativeQuery = true
+        """
+    SELECT
+    FUNCTION('DATE', a.date) as day,
+    COUNT(a) as count
+    
+    FROM Analytic a
+    WHERE a.mappingId = :mappingId
+    AND a.date >= :startDate
+    AND a.date < :endDate
+    GROUP BY FUNCTION('DATE', a.date)
+    ORDER BY FUNCTION('DATE', a.date)
+    """
 )
-    List<DailyCountDTO> last7DaysSummary(Long mappingId);
+    List<DailyCountDTO> last7DaysSummary(@Param("mappingId") Long mappingId, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
 
     @Query(

@@ -8,16 +8,16 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 @Repository
-public interface DeviceSummaryRepository extends JpaRepository<String, AnalyticDeviceSummary> {
+public interface DeviceSummaryRepository extends JpaRepository< AnalyticDeviceSummary,Long> {
 
     @Query("""
             SELECT new com.example.Url_Shortener.Records.DeviceAnalytic(
-            a.mappingId,
+            a.mappingId.mappingId,
             a.device,
             a.count
             )
-            FROM AnalyticDeviceSummary
-            WHERE a.mappingId=:mappingId
+            FROM AnalyticDeviceSummary a
+            WHERE a.mappingId.mappingId=:mappingId
             """)
     public List<DeviceAnalytic> findDeviceAnalyticByMappingId(String mappingId);
 }

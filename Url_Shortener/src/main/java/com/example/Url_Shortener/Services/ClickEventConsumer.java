@@ -37,6 +37,7 @@ public class ClickEventConsumer {
             analyticService.updateRedis(kafkaDTO); // for the direct update in the redis
             // save this in the database also
             Analytic analytic= Analytic.builder()
+                    .date(kafkaDTO.getDate())
                     .country(kafkaDTO.getCountry())
                     .device(kafkaDTO.getDeviceType())
                     .mappingId(kafkaDTO.getMappingId())

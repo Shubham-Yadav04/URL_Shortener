@@ -1,4 +1,4 @@
 package com.example.Url_Shortener.Records;
 
-public record DeviceAnalytic(String mappingId,String device,int count) {
+public record DeviceAnalytic(Long mappingId,String device,long count) {
 }

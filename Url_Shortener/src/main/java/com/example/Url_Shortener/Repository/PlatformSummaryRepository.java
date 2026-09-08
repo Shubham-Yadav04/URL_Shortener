@@ -9,17 +9,17 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface PlatformSummaryRepository extends JpaRepository<String, AnalyticPlatformSummary> {
+public interface PlatformSummaryRepository extends JpaRepository< AnalyticPlatformSummary,Long> {
 
 
     @Query("""
             SELECT new com.example.Url_Shortener.Records.PlatformAnalytic(
-            a.mappingId,
+            a.mappingId.mappingId,
             a.platform,
             a.count
             )
-            FROM AnalyticPlatformSummary
-            WHERE mappingId=:mappingId
+            FROM AnalyticPlatformSummary a
+            WHERE a.mappingId.mappingId=:mappingId
             """)
     public List<PlatformAnalytic> findPlatformAnalyticByMappingId(String mappingId);
 }

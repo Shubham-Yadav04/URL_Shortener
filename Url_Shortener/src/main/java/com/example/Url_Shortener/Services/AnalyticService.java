@@ -10,6 +10,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -79,7 +80,12 @@ public class AnalyticService {
 
     public List<DailyCountDTO> last7DayAnalysis(Long mappingId){
         try{
-            return analyticRepository.last7DaysSummary(mappingId);
+            LocalDate today = LocalDate.now();
+
+            LocalDateTime startDate = today.minusDays(6).atStartOfDay();
+            LocalDateTime endDate = today.plusDays(1).atStartOfDay();
+            List<DailyCountDTO> ls= analyticRepository.last7DaysSummary(mappingId,startDate,endDate);
+            return ls;
         } catch (RuntimeException e) {
             throw new RuntimeException(e);
         }

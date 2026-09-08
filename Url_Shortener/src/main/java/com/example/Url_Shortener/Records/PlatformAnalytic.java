@@ -1,4 +1,4 @@
 package com.example.Url_Shortener.Records;
 
-public record PlatformAnalytic(String mappingId, String platform ,long count) {
+public record PlatformAnalytic(Long mappingId, String platform ,long count) {
 }

@@ -8,16 +8,16 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 @Repository
-public interface CountrySummaryRepository extends JpaRepository<String, AnalyticCountrySummary> {
+public interface CountrySummaryRepository extends JpaRepository<AnalyticCountrySummary, Long> {
 
     @Query("""
             SELECT new com.example.Url_Shortener.Records.CountryAnalytic(
-            a.mappingId,
+            a.mappingId.mappingId,
             a.country,
             a.count
             )
-            FROM AnalyticCountrySummary acs
-            WHERE acs.mappingId=:mappingId
+            FROM AnalyticCountrySummary a
+            WHERE a.mappingId.mappingId=:mappingId
             """)
     public List<CountryAnalytic> findByMappingId(String mappingId);
 }

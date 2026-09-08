@@ -52,6 +52,7 @@ private final  CustomUserDetailService customUserDetailService;
 //        System.out.println("this route should not be filtered ");
         String path = request.getRequestURI();
         return path.startsWith("/user/signup") || path.startsWith("/user/login") || path.startsWith("/login") || path.startsWith("/r")
+                || path.startsWith("/analytic")
                 || path.startsWith("/verify")
                 ;
     }

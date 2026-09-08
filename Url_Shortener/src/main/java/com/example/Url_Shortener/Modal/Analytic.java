@@ -7,7 +7,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigInteger;
+import java.sql.Date;
 import java.sql.Time;
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
@@ -30,7 +32,7 @@ public class Analytic {
     @Column(name = "mapping_id")
     private Long mappingId;
     @Column(name = "date")
-    private LocalDateTime date;
+    private LocalDateTime date= LocalDateTime.now();
     @Column(name = "country")
     private String country;
     @Column(name = "device")
