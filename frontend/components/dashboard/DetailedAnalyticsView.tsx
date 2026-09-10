@@ -8,7 +8,6 @@ import {
   Laptop,
   ArrowLeft,
   Search,
-  Compass,
   Monitor,
   Tablet,
 } from "lucide-react";
@@ -16,6 +15,7 @@ import axios from "axios";
 
 interface DetailedAnalyticsViewProps {
   urlData: any;
+  id:string;
   onBack: () => void;
 }
 
@@ -41,6 +41,7 @@ interface PlatformAnalytic {
 
 export default function DetailedAnalyticsView({
   urlData,
+  id,
   onBack,
 }: DetailedAnalyticsViewProps) {
   const [activeTab, setActiveTab] = useState<TabType>("country");
@@ -54,20 +55,21 @@ export default function DetailedAnalyticsView({
   const totalClicks = urlData?.totalCount || 0;
 
   useEffect(() => {
-    if (!urlData?.id) return;
+    
+    if (!id) return;
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/";
     const baseUrl = backendUrl.endsWith("/") ? backendUrl : `${backendUrl}/`;
 
     const fetchAnalyticsData = async () => {
       setLoading(true);
       try {
         const [countryRes, deviceRes, platformRes] = await Promise.all([
-          axios.get<CountryAnalytic[]>(`${baseUrl}mapping/${urlData.id}/country/`).catch(() => ({ data: [] })),
-          axios.get<DeviceAnalytic[]>(`${baseUrl}mapping/${urlData.id}/device/`).catch(() => ({ data: [] })),
-          axios.get<PlatformAnalytic[]>(`${baseUrl}mapping/${urlData.id}/platform/`).catch(() => ({ data: [] })),
+          axios.get<CountryAnalytic[]>(`${baseUrl}mapping/${id}/country/`).catch(() => ({ data: [] })),
+          axios.get<DeviceAnalytic[]>(`${baseUrl}mapping/${id}/device/`).catch(() => ({ data: [] })),
+          axios.get<PlatformAnalytic[]>(`${baseUrl}mapping/${id}/platform/`).catch(() => ({ data: [] })),
         ]);
-
+console.log("printing the detailed analytic data:",countryRes.data, deviceRes.data, platformRes.data);
         setCountryData(countryRes.data || []);
         setDeviceData(deviceRes.data || []);
         setPlatformData(platformRes.data || []);
@@ -79,7 +81,7 @@ export default function DetailedAnalyticsView({
     };
 
     fetchAnalyticsData();
-  }, [urlData?.id]);
+  }, [id]);
 
   const filteredCountries = useMemo(() => {
     return countryData.filter((c) =>
@@ -215,7 +217,7 @@ export default function DetailedAnalyticsView({
                       const percent = totalClicks > 0 ? Math.round((count / totalClicks) * 100) : 0;
                       return (
                         <div
-                          key={c.mappingId || idx}
+                          key={idx}
                           className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col gap-2 hover:bg-white/[0.04] transition-colors"
                         >
                           <div className="flex items-center justify-between text-xs font-normal">
@@ -284,7 +286,7 @@ export default function DetailedAnalyticsView({
 
                     return (
                       <div
-                        key={d.mappingId || idx}
+                        key={idx}
                         className="p-4 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between gap-3"
                       >
                         <div className="flex items-center justify-between">
@@ -347,7 +349,7 @@ export default function DetailedAnalyticsView({
                     const share = totalClicks > 0 ? Math.round((count / totalClicks) * 100) : 0;
                     return (
                       <div
-                        key={p.mappingId || idx}
+                        key={idx}
                         className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col gap-2"
                       >
                         <div className="flex items-center justify-between text-xs font-normal">

@@ -9,9 +9,11 @@ import { Menu, X } from "lucide-react";
 function DashboardShell({
   children,
   sidebar,
+  bargraph,
 }: {
   children: React.ReactNode;
   sidebar: React.ReactNode;
+  bargraph?: React.ReactNode;
 }) {
   const { isOpen, toggle, close } = useSidebar();
 
@@ -59,9 +61,11 @@ function DashboardShell({
 export default function DashboardLayout({
   children,
   sidebar,
+  bargraph,
 }: {
   children: React.ReactNode;
   sidebar: React.ReactNode;
+  bargraph?: React.ReactNode;
 }) {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
