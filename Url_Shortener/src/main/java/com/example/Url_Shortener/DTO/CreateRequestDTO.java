@@ -2,7 +2,7 @@ package com.example.Url_Shortener.DTO;
 
 import lombok.*;
 
-import java.net.URL;
+import java.time.Instant;
 
 
 @Builder
@@ -13,9 +13,10 @@ import java.net.URL;
 @ToString
 public class CreateRequestDTO {
 
-private Boolean isProtected=false;
+    private Boolean isProtected = false;
     private String password;
     private String shortCode;
-    private String longURL;
+    private String longUrl;
     private String projectName;
+    private Instant expiresAt;
 }

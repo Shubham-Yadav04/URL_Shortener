@@ -19,11 +19,24 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Locale;
+import org.springframework.beans.factory.annotation.Value;
 @Component
 public class CustomAuthSuccessHandler implements AuthenticationSuccessHandler {
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
+    @Value("${access_expiry:600}")
+    private int accessTokenExpiry;
+    @Value("${refresh_expiry:604800}")
+    private int refreshTokenExpiry;
+    @Value("${app.cookie.secure:false}")
+    private boolean secureCookie;
+    @Value("${app.cookie.same-site:Lax}")
+    private String cookieSameSite;
+    @Value("${app.frontend-url:http://localhost:3000}")
+    private String frontendUrl;
 
     public CustomAuthSuccessHandler(UserRepository userRepository,
                                     RefreshTokenRepository refreshTokenRepository,
@@ -40,25 +53,26 @@ public class CustomAuthSuccessHandler implements AuthenticationSuccessHandler {
             throws IOException, ServletException {
 
         String email;
-        String username;
         String provider;
         User user;
-        try{
         if (authentication instanceof OAuth2AuthenticationToken oauthToken) {
             provider = oauthToken.getAuthorizedClientRegistrationId().toUpperCase();
             var oauthUser = oauthToken.getPrincipal();
-            email = oauthUser.getAttribute("email");
-            if (email == null) {
+            String providerEmail = oauthUser.getAttribute("email");
+            if (providerEmail == null || providerEmail.isBlank()) {
                 throw new RuntimeException("Email not found from OAuth provider");
             }
-            username = oauthUser.getAttribute("name");
-            provider=oauthToken.getAuthorizedClientRegistrationId().toUpperCase();
-             user = userRepository.findByEmail(email).orElse(null);
+            email = providerEmail.trim().toLowerCase(Locale.ROOT);
+            String username = oauthUser.getAttribute("name");
+            user = userRepository.findCanonicalByEmail(email).orElse(null);
             if (user == null) {
                 user = new User();
                 user.setEmail(email);
-                user.setUsername(username);
+                user.setUsername(username == null || username.isBlank()
+                        ? email.substring(0, email.indexOf('@'))
+                        : username);
             }
+            if (user.getProviders() == null) user.setProviders(new HashSet<>());
             user.getProviders().add(provider);
             userRepository.save(user);
         } else {
@@ -66,51 +80,68 @@ public class CustomAuthSuccessHandler implements AuthenticationSuccessHandler {
             provider = "LOCAL";
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             email = userDetails.getEmail();
-            username = userDetails.getUsername();
-            user = userRepository.findByEmail(email).orElse(null);
+            user = userRepository.findById(userDetails.getId()).orElse(null);
             if (user == null) throw new LoginException("login failed");
+            if (user.getProviders() == null) user.setProviders(new HashSet<>());
             user.getProviders().add(provider);
+            userRepository.save(user);
 
         }
-            handleLogin(response,user);
-        response.sendRedirect("http://localhost:3000/dashboard");
-        } catch (RuntimeException e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        handleLogin(response,user);
+        response.sendRedirect(frontendUrl + "/dashboard");
     }
-public void handleLogin(HttpServletResponse response,User user){
-        try {
+    public void handleLogin(HttpServletResponse response, User user) {
             String email = user.getEmail();
-            String accessToken = jwtService.generateToken(email, 10 * 60*1000);
-            String refreshTokenValue = jwtService.generateToken(email, 7 * 24 * 60 * 60*1000);
+            String accessToken = jwtService.generateToken(email, accessTokenExpiry * 1000L);
+            String refreshTokenValue = jwtService.generateToken(email, refreshTokenExpiry * 1000L);
             RefreshToken refreshToken = new RefreshToken();
             refreshToken.setToken(refreshTokenValue);
             refreshToken.setUser(user);
-            refreshToken.setExpiryDate(Instant.now().plusSeconds(7 * 24 * 60 * 60));
+            refreshToken.setExpiryDate(Instant.now().plusSeconds(refreshTokenExpiry));
             refreshToken.setRevoked(false);
 
             refreshTokenRepository.save(refreshToken);
             ResponseCookie accessCookie = ResponseCookie.from("accessToken", accessToken)
                     .httpOnly(true)
-                    .secure(true)
+                    .secure(secureCookie)
                     .path("/")
-                    .sameSite("None")
-                    .maxAge(10 * 60)
+                    .sameSite(cookieSameSite)
+                    .maxAge(accessTokenExpiry)
                     .build();
 
             ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshTokenValue)
                     .httpOnly(true)
-                    .secure(true)
+                    .secure(secureCookie)
                     .path("/")
-                    .sameSite("None")
-                    .maxAge(7 * 24 * 60 * 60)
+                    .sameSite(cookieSameSite)
+                    .maxAge(refreshTokenExpiry)
                     .build();
 
             response.addHeader("Set-Cookie", accessCookie.toString());
             response.addHeader("Set-Cookie", refreshCookie.toString());
-        } catch (RuntimeException e) {
-            throw new RuntimeException("error in token creation ");
+    }
+
+    @Transactional
+    public void handleLogout(HttpServletResponse response, String refreshTokenValue, String userId) {
+        if (refreshTokenValue != null) {
+            RefreshToken token = refreshTokenRepository.findByTokenEager(refreshTokenValue);
+            if (token != null && token.getUser().getUserId().equals(userId)) {
+                token.setRevoked(true);
+                refreshTokenRepository.save(token);
+            }
         }
-}
+        response.addHeader("Set-Cookie", expiredCookie("accessToken").toString());
+        response.addHeader("Set-Cookie", expiredCookie("refreshToken").toString());
+    }
+
+    private ResponseCookie expiredCookie(String name) {
+        return ResponseCookie.from(name, "")
+                .httpOnly(true)
+                .secure(secureCookie)
+                .path("/")
+                .sameSite(cookieSameSite)
+                .maxAge(0)
+                .build();
+    }
 
 }

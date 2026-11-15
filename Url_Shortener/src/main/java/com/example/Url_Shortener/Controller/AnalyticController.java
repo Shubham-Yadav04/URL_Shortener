@@ -2,12 +2,15 @@ package com.example.Url_Shortener.Controller;
 
 import com.example.Url_Shortener.DTO.AnalyticSummaryDTO;
 import com.example.Url_Shortener.DTO.DailyCountDTO;
-import com.example.Url_Shortener.Repository.AnalyticRepository;
+import com.example.Url_Shortener.DTO.CustomUserDetails;
+import com.example.Url_Shortener.Services.MappingService;
+import com.example.Url_Shortener.Services.UniqueViewService;
 import com.example.Url_Shortener.Services.AnalyticService;
 import com.example.Url_Shortener.Services.AnalyticSummaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,30 +23,28 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AnalyticController {
     private final AnalyticService analyticService;
-private final AnalyticSummaryService analyticSummaryService;
+    private final AnalyticSummaryService analyticSummaryService;
+    private final MappingService mappingService;
+    private final UniqueViewService uniqueViewService;
+
     @GetMapping("/7Day/{mappingId}")
-    public List<DailyCountDTO> last7DayAnalysis(@PathVariable("mappingId") Long mappingId){
-        try{
-            return analyticService.last7DayAnalysis(mappingId);
-        } catch (RuntimeException e) {
-            throw new RuntimeException(e);
-        }
-    }
-@GetMapping("/summary/{mappingId}")
-    public ResponseEntity<AnalyticSummaryDTO> getAnalysisSummary(@PathVariable("mappingId") Long mappingId){
-        try{
-            System.out.println("in Analytic summary");
-            AnalyticSummaryDTO analyticSummaryDTO= analyticSummaryService.getSummary(mappingId);
-            if(analyticSummaryDTO!=null){
-                return new ResponseEntity<>(analyticSummaryDTO, HttpStatus.OK);
-            }
-
-            return new ResponseEntity<>(new AnalyticSummaryDTO(), HttpStatus.ACCEPTED);
-        } catch (RuntimeException e) {
-            throw new RuntimeException(e.getMessage());
-        }
-
+    public List<DailyCountDTO> last7DayAnalysis(
+            @PathVariable("mappingId") Long mappingId,
+            @AuthenticationPrincipal CustomUserDetails user) {
+        mappingService.getOwnedMapping(mappingId, user.getId());
+        return analyticService.last7DayAnalysis(mappingId);
     }
 
-
+    @GetMapping("/summary/{mappingId}")
+    public ResponseEntity<AnalyticSummaryDTO> getAnalysisSummary(
+            @PathVariable("mappingId") Long mappingId,
+            @AuthenticationPrincipal CustomUserDetails user) {
+        mappingService.getOwnedMapping(mappingId, user.getId());
+        AnalyticSummaryDTO summary = analyticSummaryService.getSummary(mappingId);
+        if (summary == null) {
+            summary = new AnalyticSummaryDTO();
+        }
+        summary.setUniqueViews(uniqueViewService.count(mappingId));
+        return new ResponseEntity<>(summary, HttpStatus.OK);
+    }
 }

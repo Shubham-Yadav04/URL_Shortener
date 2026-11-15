@@ -13,7 +13,7 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class RequestService {
 
-    @Value("${GRAPHQL_ENDPOINT}")
+    @Value("${graphql.endpoint}")
     String graphqlEndpoint;
     @Autowired
     RestTemplate restTemplate;

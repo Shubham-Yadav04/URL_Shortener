@@ -9,7 +9,8 @@ import lombok.*;
 @Builder
 public class AuthenticatedUserDTO {
 
-    private String id;
+    private String userId;
     private String username;
     private String email;
+    private boolean hasPassword;
 }

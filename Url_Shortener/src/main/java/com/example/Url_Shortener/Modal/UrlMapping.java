@@ -15,9 +15,6 @@ import java.util.List;
 @Builder
 @Table(
         uniqueConstraints ={
-                @UniqueConstraint(
-                        columnNames = {"user_id", "long_url"}
-                ),
                 @UniqueConstraint(columnNames = {"short_code"})
         }
 
@@ -35,6 +32,7 @@ private String projectName;
     @JoinColumn(name = "user_id")
     private User owner;
     private Instant createdAt= Instant.now();
+    private Instant expiresAt;
     @OneToOne
     private UrlConfig urlConfig;
 }

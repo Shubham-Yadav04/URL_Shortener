@@ -8,6 +8,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
+
 @Service
 public class CustomUserDetailService implements UserDetailsService {
 
@@ -21,7 +23,8 @@ public class CustomUserDetailService implements UserDetailsService {
     public UserDetails loadUserByUsername(String email)
             throws UsernameNotFoundException {
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findCanonicalByEmail(
+                        email.trim().toLowerCase(Locale.ROOT))
                 .orElseThrow(() ->
                         new UsernameNotFoundException("User not found"));
         return new CustomUserDetails(user);

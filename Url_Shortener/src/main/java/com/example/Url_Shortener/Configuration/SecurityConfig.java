@@ -1,8 +1,8 @@
 package com.example.Url_Shortener.Configuration;
 
 import com.example.Url_Shortener.Filter.AuthFilter;
-import com.example.Url_Shortener.Services.CustomUserDetailService;
 import com.example.Url_Shortener.Utils.CustomAuthSuccessHandler;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,30 +18,39 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
+import java.util.Arrays;
 
 @Configuration
 public class SecurityConfig {
 
     private final AuthFilter authFilter;
     private final CustomAuthSuccessHandler authSuccessHandler;
-    SecurityConfig(AuthFilter authFilter,CustomAuthSuccessHandler customAuthSuccessHandler){
-        this.authFilter=authFilter;
-        this.authSuccessHandler=customAuthSuccessHandler;
+    private final String frontendOrigin;
+
+    SecurityConfig(AuthFilter authFilter,
+                   CustomAuthSuccessHandler customAuthSuccessHandler,
+                   @Value("${app.frontend-origin:http://localhost:3000}") String frontendOrigin) {
+        this.authFilter = authFilter;
+        this.authSuccessHandler = customAuthSuccessHandler;
+        this.frontendOrigin = frontendOrigin;
     }
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .authorizeHttpRequests( request->
-                        request.requestMatchers("/user/**").permitAll()
-                                .requestMatchers("/r/**").permitAll()
-                                .requestMatchers("/verify/**").permitAll()
-                                .requestMatchers(HttpMethod.GET,"/analytic/**").permitAll()
-                                .anyRequest().permitAll()
-                        ).
-                addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
+                .authorizeHttpRequests(request -> request
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/user/signup", "/user/login", "/oauth2/**", "/login/oauth2/**").permitAll()
+                        .requestMatchers("/r/**", "/verify").permitAll()
+                        .anyRequest().authenticated())
+                .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
                 .formLogin(AbstractHttpConfigurer::disable)
+                .exceptionHandling(errors -> errors
+                        .authenticationEntryPoint((request, response, exception) ->
+                                response.sendError(401, "Authentication required"))
+                        .accessDeniedHandler((request, response, exception) ->
+                                response.sendError(403, "Access denied")))
                 .oauth2Login(oauth -> oauth
                         .successHandler(authSuccessHandler)
                 )
@@ -57,7 +66,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(List.of("http://localhost:3000"));
+        config.setAllowedOrigins(Arrays.stream(frontendOrigin.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toList());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

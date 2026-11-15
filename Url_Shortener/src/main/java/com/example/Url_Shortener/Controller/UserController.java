@@ -3,15 +3,13 @@ package com.example.Url_Shortener.Controller;
 import com.example.Url_Shortener.DTO.AuthenticatedUserDTO;
 import com.example.Url_Shortener.DTO.CustomUserDetails;
 import com.example.Url_Shortener.DTO.LoginDTO;
+import com.example.Url_Shortener.DTO.PasswordRequestDTO;
 import com.example.Url_Shortener.DTO.SignUpDTO;
-import com.example.Url_Shortener.ExceptionHandler.Exceptions.UserAlreadyExistsException;
-import com.example.Url_Shortener.ExceptionHandler.Exceptions.UserNotFoundException;
+import com.example.Url_Shortener.DTO.UserProfileUpdateDTO;
 import com.example.Url_Shortener.Modal.User;
-import com.example.Url_Shortener.Repository.UserRepository;
-import com.example.Url_Shortener.Services.CustomUserDetailService;
 import com.example.Url_Shortener.Services.UserService;
 import com.example.Url_Shortener.Utils.CustomAuthSuccessHandler;
-import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
@@ -19,13 +17,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.IOException;
-import java.rmi.RemoteException;
-import java.util.List;
-
 
 @RestController
 @RequestMapping("/user")
@@ -34,81 +28,89 @@ public class UserController {
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
     private final CustomAuthSuccessHandler successHandler;
-    private final CustomUserDetailService customUserDetailService;
-    public UserController(UserService userService,AuthenticationManager authenticationManager,CustomAuthSuccessHandler successHandler,CustomUserDetailService customUserDetailService) {
+    public UserController(UserService userService,
+                          AuthenticationManager authenticationManager,
+                          CustomAuthSuccessHandler successHandler) {
         this.userService = userService;
-        this.authenticationManager=authenticationManager;
-        this.successHandler=successHandler;
-        this.customUserDetailService= customUserDetailService;
+        this.authenticationManager = authenticationManager;
+        this.successHandler = successHandler;
     }
     @GetMapping("/health-check")
     public String healthCheck(){
         return "user controllers working";
     }
     @GetMapping("/me")
-    public ResponseEntity<Object> isAuthenticated(Authentication auth){
-            if (auth == null || !auth.isAuthenticated()) {
-            return ResponseEntity.status(401).build();
-        }
-        CustomUserDetails user=( CustomUserDetails) auth.getPrincipal();
-AuthenticatedUserDTO response=AuthenticatedUserDTO.builder().id(user.getId()).email(user.getEmail()).username(user.getUsername()).build();
-        return ResponseEntity.ok(response);
-    }
-    @GetMapping("/")
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<AuthenticatedUserDTO> isAuthenticated(
+            @AuthenticationPrincipal CustomUserDetails user) {
+        return ResponseEntity.ok(toUserDTO(userService.getUserById(user.getId())));
     }
 
-    @PostMapping("/")
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        return ResponseEntity.ok(userService.createUser(user));
-    }
-
-    @GetMapping("/{userId}")
-    public ResponseEntity<User> getUser(@PathVariable String userId) {
-        return ResponseEntity.ok(userService.getUserById(userId));
-    }
     @PostMapping("/signup")
-    public ResponseEntity<?> signup(@RequestBody SignUpDTO signUpDTO, HttpServletRequest request, HttpServletResponse response) throws  Exception{
-        // Create user
-        try{
-           User user=userService.signup(signUpDTO);
-           successHandler.handleLogin(response,user);
-         return new ResponseEntity<>("User created ", HttpStatus.CREATED);
-        } catch (Exception ex) {
-
-throw  new RuntimeException(ex.getMessage());
-        }
-    }
-@PostMapping("/login")
-public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO,HttpServletRequest request,HttpServletResponse response){
-        try{
-            Authentication authentication =
-                    authenticationManager.authenticate(
-                            new UsernamePasswordAuthenticationToken(
-                                    loginDTO.getEmail(), loginDTO.getPassword()
-                            )
-                    );
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            User user= userService.getUserByEmail(loginDTO.getEmail());
-            successHandler.handleLogin(response,user);
-            if(user==null) throw new UserNotFoundException("user not found");
-           return new ResponseEntity<>(user,HttpStatus.OK);
-        } catch (Exception e) {
-           return new ResponseEntity<>(e.getMessage(),HttpStatus.UNAUTHORIZED);
-        }
-}
-    @PutMapping("/{userId}")
-    public ResponseEntity<User> updateUser(
-            @PathVariable String userId,
-            @RequestBody User user) {
-
-        return ResponseEntity.ok(userService.updateUser(userId, user));
+    public ResponseEntity<AuthenticatedUserDTO> signup(@RequestBody SignUpDTO signUpDTO,
+                                                        HttpServletResponse response) {
+        User user = userService.signup(signUpDTO);
+        successHandler.handleLogin(response, user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(toUserDTO(user));
     }
 
-    @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> deleteUser(@PathVariable String userId) {
-        userService.deleteUser(userId);
+    @PostMapping("/login")
+    public ResponseEntity<AuthenticatedUserDTO> login(@RequestBody LoginDTO loginDTO,
+                                                       HttpServletResponse response) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword()));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        User user = userService.getUserById(userDetails.getId());
+        successHandler.handleLogin(response, user);
+        return ResponseEntity.ok(toUserDTO(user));
+    }
+
+    @PutMapping("/password")
+    public ResponseEntity<AuthenticatedUserDTO> setPassword(
+            @RequestBody PasswordRequestDTO passwordRequest,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        return ResponseEntity.ok(toUserDTO(
+                userService.setPassword(currentUser.getId(), passwordRequest.getPassword())));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@AuthenticationPrincipal CustomUserDetails user,
+                                       HttpServletRequest request,
+                                       HttpServletResponse response) {
+        String refreshToken = null;
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("refreshToken".equals(cookie.getName())) {
+                    refreshToken = cookie.getValue();
+                    break;
+                }
+            }
+        }
+        successHandler.handleLogout(response, refreshToken, user.getId());
+        SecurityContextHolder.clearContext();
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{userId}")
+    public ResponseEntity<AuthenticatedUserDTO> updateUser(
+            @PathVariable String userId,
+            @RequestBody UserProfileUpdateDTO profile,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        if (!currentUser.getId().equals(userId)) {
+            throw new org.springframework.security.access.AccessDeniedException("You cannot update another account");
+        }
+        User changes = new User();
+        changes.setUsername(profile.getUsername());
+        changes.setEmail(profile.getEmail());
+        return ResponseEntity.ok(toUserDTO(userService.updateUser(userId, changes)));
+    }
+
+    private AuthenticatedUserDTO toUserDTO(User user) {
+        return AuthenticatedUserDTO.builder()
+                .userId(user.getUserId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .hasPassword(user.getPassword() != null && !user.getPassword().isBlank())
+                .build();
     }
 }

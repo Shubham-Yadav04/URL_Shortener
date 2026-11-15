@@ -6,7 +6,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.*;
 
-import java.util.ArrayList;
+import java.time.Instant;
 
 @Entity
 @Getter
@@ -21,5 +21,9 @@ public class UrlConfig {
     private String detailId;
     private boolean isProtected=false;
     private String passwordHash;
-private boolean isActive=false;
+    private Instant deactivatedAt;
+
+    public boolean isActive() {
+        return deactivatedAt == null;
+    }
 }

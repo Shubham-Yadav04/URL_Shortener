@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.security.access.AccessDeniedException;
 
 import javax.security.auth.login.LoginException;
 
@@ -19,8 +20,17 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<?> UserAlreadyExists(UserAlreadyExistsException ex) {
-        System.out.println(ex.getMessage());
-        return new ResponseEntity<>(ex.getMessage(),HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(ex.getMessage(),HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<?> handleAccessDenied(AccessDeniedException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> handleInvalidInput(IllegalArgumentException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)
@@ -48,8 +58,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InValidShortCode.class)
     public ResponseEntity<?> InValidShortCodeError(InValidShortCode ex) {
-        System.out.println(ex.getMessage());
-        return new ResponseEntity<>(ex.getMessage(),HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(ex.getMessage(),HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(ProtectedRoute.class)

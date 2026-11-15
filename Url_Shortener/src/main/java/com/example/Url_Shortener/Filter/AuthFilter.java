@@ -1,26 +1,23 @@
 package com.example.Url_Shortener.Filter;
 
-import com.example.Url_Shortener.ExceptionHandler.Exceptions.LoginException;
 import com.example.Url_Shortener.Modal.RefreshToken;
 import com.example.Url_Shortener.Modal.User;
 import com.example.Url_Shortener.Repository.RefreshTokenRepository;
-
 import com.example.Url_Shortener.Services.CustomUserDetailService;
 import com.example.Url_Shortener.Services.JwtService;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpMethod;
 
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -34,11 +31,13 @@ public class AuthFilter extends OncePerRequestFilter {
     private final RefreshTokenRepository refreshTokenRepository;
 //    private final UserRepository userRepository;
 private final  CustomUserDetailService customUserDetailService;
-    @Value("${access_expiry}")
+    @Value("${access_expiry:600}")
     private int accessTokenExpiry;
-    @Value("${refresh_expiry}")
-    private int refreshTokenExpiry;
 
+    @Value("${app.cookie.secure:false}")
+    private boolean secureCookie;
+    @Value("${app.cookie.same-site:Lax}")
+    private String cookieSameSite;
 
     public AuthFilter(JwtService jwtService,
                 RefreshTokenRepository refreshTokenRepository,
@@ -49,12 +48,14 @@ private final  CustomUserDetailService customUserDetailService;
         }
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-//        System.out.println("this route should not be filtered ");
         String path = request.getRequestURI();
-        return path.startsWith("/user/signup") || path.startsWith("/user/login") || path.startsWith("/login") || path.startsWith("/r")
-                || path.startsWith("/analytic")
-                || path.startsWith("/verify")
-                ;
+        return HttpMethod.OPTIONS.matches(request.getMethod())
+                || path.equals("/user/signup")
+                || path.equals("/user/login")
+                || path.startsWith("/oauth2/")
+                || path.startsWith("/login/oauth2/")
+                || path.startsWith("/r/")
+                || (path.equals("/verify") && HttpMethod.POST.matches(request.getMethod()));
     }
         @Override
         protected void doFilterInternal(HttpServletRequest request,
@@ -64,7 +65,6 @@ private final  CustomUserDetailService customUserDetailService;
 
             String accessToken = null;
             String refreshToken = null;
-            String email = null;
             if (request.getCookies() != null) {
                 for (Cookie cookie : request.getCookies()) {
                     if ("accessToken".equals(cookie.getName())) {
@@ -75,38 +75,33 @@ private final  CustomUserDetailService customUserDetailService;
                     }
                 }
             }
-            try{
-                if (accessToken != null) {
-
+            if (accessToken != null) {
+                String email = null;
+                try {
                     email = jwtService.extractEmail(accessToken);
-
-                    if (email != null &&
-                            SecurityContextHolder.getContext().getAuthentication() == null &&
-                            jwtService.isValidToken(accessToken, email)) {
-
-                        setAuthentication(email, request);
-                        filterChain.doFilter(request, response);
-                        return;
-                    }
+                } catch (JwtException | IllegalArgumentException invalidToken) {
+                    SecurityContextHolder.clearContext();
                 }
-
-            } catch (RuntimeException e) {
-                System.out.println("message " + e.getMessage());
+                if (email != null) {
+                    setAuthentication(email, request);
+                    filterChain.doFilter(request, response);
+                    return;
+                }
             }
-            if (refreshToken != null) {
 
+            if (refreshToken != null) {
                 User verifiedUser=verifyRefreshToken(refreshToken);
                 if(verifiedUser!=null) {
-                    String newAccessToken = jwtService.generateToken(email, 10 * 60*1000);
+                    String newAccessToken = jwtService.generateToken(verifiedUser.getEmail(), accessTokenExpiry * 1000L);
                     ResponseCookie newCookie = ResponseCookie.from("accessToken",newAccessToken)
                             .httpOnly(true)
-                            .secure(true)
+                            .secure(secureCookie)
                             .path("/")
-                            .sameSite("None")
-                            .maxAge(10 * 60)
+                            .sameSite(cookieSameSite)
+                            .maxAge(accessTokenExpiry)
                             .build();
 
-                    response.setHeader("Set-Cookie", newCookie.toString());
+                    response.addHeader("Set-Cookie", newCookie.toString());
                     setAuthentication(verifiedUser.getEmail(), request);
 
                     filterChain.doFilter(request, response);
@@ -114,8 +109,7 @@ private final  CustomUserDetailService customUserDetailService;
 
                 }
             }
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            response.getWriter().write("Unauthorized: Invalid or expired tokens");
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: Invalid or expired tokens");
         }
         private void setAuthentication(String email, HttpServletRequest request) {
             UserDetails userDetails =
@@ -127,7 +121,8 @@ private final  CustomUserDetailService customUserDetailService;
                             userDetails.getAuthorities()
                     );
 
-            authToken.setDetails(request);
+            authToken.setDetails(new org.springframework.security.web.authentication.WebAuthenticationDetailsSource()
+                    .buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authToken);
         }
         private User verifyRefreshToken(String token){
@@ -137,12 +132,9 @@ private final  CustomUserDetailService customUserDetailService;
 
                 if (tokenEntity != null &&
                         !tokenEntity.isRevoked() &&
+                        tokenEntity.getExpiryDate() != null &&
                         tokenEntity.getExpiryDate().isAfter(Instant.now())) {
-                    try {
-                        return tokenEntity.getUser();
-                    } catch (RuntimeException e) {
-                        throw new RuntimeException(e);
-                    }
+                    return tokenEntity.getUser();
                 }
             return null;
         }

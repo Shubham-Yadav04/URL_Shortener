@@ -1,7 +1,9 @@
 package com.example.Url_Shortener.Controller;
 
 import com.example.Url_Shortener.DTO.CreateRequestDTO;
+import com.example.Url_Shortener.DTO.CustomUserDetails;
 import com.example.Url_Shortener.DTO.MappingListDTO;
+import com.example.Url_Shortener.DTO.ShortCodeAvailabilityDTO;
 import com.example.Url_Shortener.DTO.UrlMappingDTO;
 import com.example.Url_Shortener.Records.CountryAnalytic;
 import com.example.Url_Shortener.Records.DeviceAnalytic;
@@ -16,10 +18,11 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Map;
 
@@ -48,58 +51,68 @@ private  final RedisTemplate<String,Object> redisTemplate;
     public String healthCheck(){
         return "mapping working";
     }
-    @PostMapping("/shorten/{userId}")
+    @PostMapping({"/shorten", "/shorten/{userId}"})
     public ResponseEntity<UrlMappingDTO> createShortUrl(
-            @PathVariable String userId,
-           @RequestBody  CreateRequestDTO requestDTO
-    ) throws MalformedURLException {
-
-        try{
-            UrlMappingDTO res=mappingService.createShortUrl(userId,requestDTO);
-            return ResponseEntity.ok(
-res
-            );
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            @PathVariable(required = false) String userId,
+            @RequestBody CreateRequestDTO requestDTO,
+            @AuthenticationPrincipal CustomUserDetails user) throws java.net.MalformedURLException {
+        if (userId != null && !user.getId().equals(userId)) {
+            throw new AccessDeniedException("You cannot create links for another account");
         }
+        return ResponseEntity.ok(mappingService.createShortUrl(user.getId(), requestDTO));
     }
+
+    @GetMapping("/short-code/availability")
+    public ResponseEntity<ShortCodeAvailabilityDTO> checkShortCodeAvailability(
+            @RequestParam String code) {
+        String normalizedCode = MappingService.normalizeCustomCode(code);
+        return ResponseEntity.ok(new ShortCodeAvailabilityDTO(
+                normalizedCode,
+                mappingService.isShortCodeAvailable(normalizedCode)));
+    }
+
     @GetMapping("/{mappingId}")
     public ResponseEntity<UrlMappingDTO> getMapping(
-            @PathVariable Long mappingId) {
-    return ResponseEntity.ok(
-            mappingService.getMappingById(mappingId)
-    );
-
+            @PathVariable Long mappingId,
+            @AuthenticationPrincipal CustomUserDetails user) {
+        return ResponseEntity.ok(mappingService.getMappingById(mappingId, user.getId()));
     }
+
+    @GetMapping("/user")
+    public ResponseEntity<List<MappingListDTO>> getCurrentUserMappings(
+            @AuthenticationPrincipal CustomUserDetails user) {
+        return ResponseEntity.ok(mappingService.getUserMappings(user.getId()));
+    }
+
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<MappingListDTO>> getUserMappings(
-            @PathVariable String userId) {
-        return ResponseEntity.ok(
-                mappingService.getUserMappings(userId)
-        );
+            @PathVariable String userId,
+            @AuthenticationPrincipal CustomUserDetails user) {
+        if (!user.getId().equals(userId)) {
+            throw new AccessDeniedException("You cannot view another user's links");
+        }
+        return ResponseEntity.ok(mappingService.getUserMappings(user.getId()));
     }
-@PutMapping("/{shortCode}")
 
-public ResponseEntity<String> updatingLongUrl(@PathVariable("shortCode" ) String shortCode, @RequestParam("longUrl") String longUrl){
-       try{
-           return  ResponseEntity.ok( mappingService.updateLongUrl(shortCode,longUrl));
-       } catch (Exception e) {
-           throw new RuntimeException(e.getMessage());
-       }
-}
-
-@GetMapping("/day/analysis/{mappingId}")
-public ResponseEntity<?> get24hrAnalysis(@PathVariable("mappingId") String mappingId) {
-try{
-    Map<Object, Object> map=redisTemplate.opsForHash().entries("hash:"+mappingId);
-    if(map!=null){
-        return new ResponseEntity<>(map,HttpStatus.OK);
+    @PutMapping("/{shortCode}")
+    public ResponseEntity<String> updatingLongUrl(
+            @PathVariable("shortCode") String shortCode,
+            @RequestParam("longUrl") String longUrl,
+            @AuthenticationPrincipal CustomUserDetails user) throws java.net.MalformedURLException {
+        return ResponseEntity.ok(mappingService.updateLongUrl(shortCode, longUrl, user.getId()));
     }
-    return new ResponseEntity<>("no analysis",HttpStatus.NOT_FOUND);
-} catch (RuntimeException e) {
-    throw new RuntimeException(e);
-}
-}
+
+    @GetMapping("/day/analysis/{mappingId}")
+    public ResponseEntity<?> get24hrAnalysis(
+            @PathVariable("mappingId") String mappingId,
+            @AuthenticationPrincipal CustomUserDetails user) {
+        mappingService.getOwnedMapping(Long.valueOf(mappingId), user.getId());
+        Map<Object, Object> map = redisTemplate.opsForHash().entries("hash:" + mappingId);
+        if (!map.isEmpty()) {
+            return new ResponseEntity<>(map, HttpStatus.OK);
+        }
+        return new ResponseEntity<>("no analysis", HttpStatus.NOT_FOUND);
+    }
 
 
 //@GetMapping("/analysis/{mappingId}")
@@ -112,22 +125,34 @@ try{
 //}
     @DeleteMapping("/{mappingId}")
     public ResponseEntity<Void> deleteMapping(
-            @PathVariable Long mappingId) {
-
+            @PathVariable Long mappingId,
+            @AuthenticationPrincipal CustomUserDetails user) {
+        mappingService.getOwnedMapping(mappingId, user.getId());
         mappingService.deleteMapping(mappingId);
         return ResponseEntity.noContent().build();
     }
 
-
     @GetMapping("/{mappingId}/country/")
-    public List<CountryAnalytic> getCountryWiseAnalytic(@PathVariable("mappingId") String mappingId){
+    public List<CountryAnalytic> getCountryWiseAnalytic(
+            @PathVariable("mappingId") String mappingId,
+            @AuthenticationPrincipal CustomUserDetails user) {
+        mappingService.getOwnedMapping(Long.valueOf(mappingId), user.getId());
         return countrySummaryService.getCountryBasedAnalysis(mappingId);
     }
+
     @GetMapping("/{mappingId}/device/")
-    public List<DeviceAnalytic> getDeviceWiseAnalytic(@PathVariable("mappingId") String mappingId){
+    public List<DeviceAnalytic> getDeviceWiseAnalytic(
+            @PathVariable("mappingId") String mappingId,
+            @AuthenticationPrincipal CustomUserDetails user) {
+        mappingService.getOwnedMapping(Long.valueOf(mappingId), user.getId());
         return deviceSummaryService.getDeviceAnalyticByMappingId(mappingId);
-    }   @GetMapping("/{mappingId}/platform/")
-    public List<PlatformAnalytic> getPlatformWiseAnalytic(@PathVariable("mappingId") String mappingId){
+    }
+
+    @GetMapping("/{mappingId}/platform/")
+    public List<PlatformAnalytic> getPlatformWiseAnalytic(
+            @PathVariable("mappingId") String mappingId,
+            @AuthenticationPrincipal CustomUserDetails user) {
+        mappingService.getOwnedMapping(Long.valueOf(mappingId), user.getId());
         return platformSummaryService.getPlatformAnalyticByMappingId(mappingId);
     }
 }
