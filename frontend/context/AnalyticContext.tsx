@@ -2,14 +2,18 @@
 import {createContext,ReactNode, useContext, useState} from "react";
 
 type ProjectSummary={
+    id:string;
     totalCount:number;
     topCountry:string;
     topDevice:string;
-    topPlatfrom:string;
+    topPlatform:string;
+    uniqueViews:number;
+    projectName:string;
+    longUrl:string;
 }
 type AnalyticContextType={
-    projectSummary:any[];
-    setProjectSummary:React.Dispatch<React.SetStateAction<any[]>>;
+    projectSummary:ProjectSummary[];
+    setProjectSummary:React.Dispatch<React.SetStateAction<ProjectSummary[]>>;
 }
 const AnalyticContext=createContext<AnalyticContextType | undefined>(undefined);
 
@@ -32,5 +36,4 @@ export const useAnalytic = (): AnalyticContextType => {
     }
     return context;
 };
-
 

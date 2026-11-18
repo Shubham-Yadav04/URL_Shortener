@@ -1,18 +1,22 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
 import axios from "axios";
+import { BACKEND_URL } from "@/lib/backend";
 
 interface User {
-  id: string;
+  userId: string;
   username: string;
   email: string;
-  // Add other user fields as needed
+  hasPassword: boolean;
 }
 export type ProjectDetail={
-  id:number;
+  mappingId:number;
   name:string;
-  shortUrl:string
+  shortUrl:string;
+  expiresAt:string | null;
+  active:boolean;
+  uniqueViews:number;
 }
 
 interface AuthContextType {
@@ -21,7 +25,7 @@ interface AuthContextType {
   isLoading: boolean;
   projectDetail:ProjectDetail[] | null;
   login: (userData: User) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   setProjectDetail:React.Dispatch<React.SetStateAction<ProjectDetail[] | null>>;
   getAllMapping:()=>Promise<void>;
@@ -29,15 +33,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const BACKEND_URL = "http://localhost:8080";
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   const [projectDetail,setProjectDetail] = useState<ProjectDetail[] |  null>(null)
 
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await axios.get(`${BACKEND_URL}/user/me`, {
@@ -45,20 +47,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       if (response.status === 200) {
         setUser(response.data);
-        console.log("User data:", response.data);
       } else {
         setUser(null);
       }
-    } catch (error) {
-      console.error("Auth check failed:", error);
+    } catch {
       setUser(null);
     } finally {
       setIsLoading(false);
     }
-  };
-const getAllMapping = async()=>{
+  }, []);
+  const getAllMapping = useCallback(async () => {
+  if (!user) {
+    setProjectDetail([]);
+    return;
+  }
   try{
-    const response = await axios.get(`${BACKEND_URL}/mapping/user/${user?.id}`,{
+    const response = await axios.get(`${BACKEND_URL}/mapping/user`,{
       withCredentials:true,
     });
     if(response.status===200){
@@ -66,24 +70,23 @@ const getAllMapping = async()=>{
     }else{
       setProjectDetail([]);
     }
-  }catch(error){
-    console.error("Mapping fetch failed:",error);
+  }catch{
     setProjectDetail([]);
   }
-}
+  }, [user]);
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [checkAuth]);
 
   const login = (userData: User) => {
     setUser(userData);
   };
   
-  const logout = async () => {
-    // Implement backend logout if available
+  const logout = useCallback(async () => {
+    await axios.post(`${BACKEND_URL}/user/logout`, {}, { withCredentials: true });
     setUser(null);
     setProjectDetail([]);
-  };
+  }, []);
 
   return (
     <AuthContext.Provider

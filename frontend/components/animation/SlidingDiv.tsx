@@ -1,43 +1,51 @@
-"use client"
-import React, { useRef, useState } from 'react'
-import {motion,Variants} from 'motion/react'
+"use client";
 
-function SlidingDiv({children,bgColorInitial,bgColorFinal}:{children:React.ReactNode,bgColorInitial:string,bgColorFinal:string}) {
-    const divRef= useRef<HTMLDivElement>(null);
-    const slideVariant:Variants={
-        initial:{
-            backgroundColor:bgColorInitial,
-            width:'0%',
-        },
-        animate:{
-            backgroundColor:bgColorFinal,
-            width:"100%",
-            transition:{
-                duration:0.7,
-                ease:"linear",
-            }
-        }
-    }
+import React, { useRef } from "react";
+import { motion, Variants } from "motion/react";
 
-  return (<>
+interface SlidingDivProps {
+  children: React.ReactNode;
+  bgColorInitial?: string;
+  bgColorFinal?: string;
+  className?: string;
+}
+
+function SlidingDiv({
+  children,
+  bgColorInitial,
+  bgColorFinal = "rgba(34, 197, 94, 0.2)",
+  className = "",
+}: SlidingDivProps) {
+  const slideVariant: Variants = {
+    initial: {
+      width: "0%",
+      opacity: 0.6,
+    },
+    animate: {
+      width: "100%",
+      opacity: 1,
+      transition: {
+        duration: 0.45,
+        ease: [0.22, 1, 0.36, 1],
+      },
+    },
+  };
+
+  return (
     <motion.div
       initial="initial"
       whileHover="animate"
-      className="relative inline-block overflow-hidden rounded-xl"
-        style={{
-          backgroundColor:bgColorInitial,
-        }}
+      className={`relative inline-block overflow-hidden rounded-xl ${className}`}
+      style={bgColorInitial ? { backgroundColor: bgColorInitial } : undefined}
     >
-  <motion.div
+      <motion.div
         variants={slideVariant}
-        className="absolute inset-0 z-0"
+        className="absolute inset-0 z-0 pointer-events-none"
+        style={{ backgroundColor: bgColorFinal }}
       />
-      <div className="relative z-10 w-fit h-fit ">
-        {children}
-      </div>
+      <div className="relative z-10 w-fit h-fit">{children}</div>
     </motion.div>
-    </>
-  )
+  );
 }
 
-export default SlidingDiv
+export default SlidingDiv;

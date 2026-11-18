@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BarChart3, TrendingUp } from "lucide-react";
+import { BarChart3, TrendingUp, Calendar } from "lucide-react";
+import { BACKEND_URL } from "@/lib/backend";
 
 export interface DailyCountDTO {
   day?: string;
@@ -22,14 +23,11 @@ export default function Last7DaysBarGraph({ id, className = "" }: Last7DaysBarGr
   useEffect(() => {
     if (!id) return;
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/";
-    const baseUrl = backendUrl.endsWith("/") ? backendUrl : `${backendUrl}/`;
-
     const fetchLast7DaysAnalytics = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${baseUrl}analytic/7Day/${id}`, {
+        const response = await fetch(`${BACKEND_URL}/analytic/7Day/${id}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -38,17 +36,16 @@ export default function Last7DaysBarGraph({ id, className = "" }: Last7DaysBarGr
         });
 
         if (!response.ok) {
-         console.log(`Error ${response.status}: ${response.statusText}`);
+          throw new Error(`Request failed: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log("Response from last 7 days analytics fetch:", data);
         if (Array.isArray(data)) {
           setDailyData(data);
         } else {
           setDailyData([]);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch last 7 days analytics:", err);
         setError("Failed to load 7-day analytics");
       } finally {
@@ -59,7 +56,7 @@ export default function Last7DaysBarGraph({ id, className = "" }: Last7DaysBarGr
     fetchLast7DaysAnalytics();
   }, [id]);
 
-  // Helper to format date string (e.g. "2026-09-07" -> "Mon" / "Sep 7")
+  // Helper to format date string
   const formatDayLabel = (dateStr?: string, index?: number): string => {
     if (!dateStr) {
       const defaultDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -85,71 +82,74 @@ export default function Last7DaysBarGraph({ id, className = "" }: Last7DaysBarGr
     }
   };
 
-  // Compute maximum count for relative height scaling
   const maxCount = Math.max(...dailyData.map((d) => Number(d.count || 0)), 1);
   const total7DayClicks = dailyData.reduce((acc, curr) => acc + Number(curr.count || 0), 0);
 
   return (
-    <div className={`bg-white/5 border border-white/10 p-6 sm:p-8 rounded-2xl ${className}`}>
-      <div className="flex items-center justify-between mb-6">
+    <div className={`rounded-3xl border border-[#e6e3da] dark:border-[#232329] bg-white dark:bg-[#121215] p-6 sm:p-8 shadow-xs ${className}`}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-[#e6e3da] dark:border-[#232329]">
         <div>
-          <h3 className="font-heading text-lg font-semibold text-white flex items-center gap-2">
-            <BarChart3 size={20} className="text-white" /> Click Traffic (Last 7 Days)
+          <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
+            <BarChart3 size={13} /> Time Series
+          </span>
+          <h3 className="font-serif text-xl sm:text-2xl font-normal text-[#141413] dark:text-[#f5f5f2] mt-0.5">
+            Click Traffic (Last 7 Days)
           </h3>
-          <p className="text-xs text-gray-400 mt-1">
-            {total7DayClicks.toLocaleString()} total clicks in the past week
+          <p className="text-xs text-[#6e6d66] dark:text-[#8e8d86] mt-0.5">
+            {total7DayClicks.toLocaleString()} total edge invocations in the rolling 7-day window.
           </p>
         </div>
+
         {!loading && !error && (
-          <div className="hidden sm:flex items-center gap-1 text-xs text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-mono shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             <TrendingUp size={12} />
-            <span>7-Day Active</span>
+            <span>Active Stream</span>
           </div>
         )}
       </div>
 
       {loading ? (
-        <div className="h-[200px] flex items-center justify-center text-xs text-gray-400">
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-            <span>Loading 7-day analytics...</span>
+        <div className="h-[210px] flex items-center justify-center text-xs text-[#6e6d66] dark:text-[#8e8d86]">
+          <div className="flex flex-col items-center gap-2.5">
+            <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            <span className="font-mono">Aggregating telemetry...</span>
           </div>
         </div>
       ) : error ? (
-        <div className="h-[200px] flex items-center justify-center text-xs text-red-400">
+        <div className="h-[210px] flex items-center justify-center text-xs text-red-500 font-mono">
           {error}
         </div>
       ) : dailyData.length === 0 ? (
-        <div className="h-[200px] flex items-center justify-center text-xs text-gray-500">
-          No traffic data available for the last 7 days.
+        <div className="h-[210px] flex items-center justify-center text-xs text-[#8e8d86] font-mono">
+          No traffic logged in this 7-day cycle.
         </div>
       ) : (
         <>
-          <div className="flex items-end h-[200px] gap-2 md:gap-4 pt-6">
+          <div className="flex items-end h-[210px] gap-2 sm:gap-4 pt-6 px-2">
             {dailyData.map((item, i) => {
               const rawDate = item.day || item.Day;
               const count = Number(item.count || 0);
-              // Calculate percentage height relative to max count (min height 8% for visibility)
-              const heightPercent = maxCount > 0 ? Math.max(Math.round((count / maxCount) * 100), count > 0 ? 12 : 6) : 6;
+              const heightPercent =
+                maxCount > 0 ? Math.max(Math.round((count / maxCount) * 100), count > 0 ? 12 : 6) : 6;
               const dayLabel = formatDayLabel(rawDate, i);
               const fullDateStr = formatFullDate(rawDate);
 
               return (
                 <div key={i} className="flex-1 flex flex-col items-center h-full justify-end group relative">
                   {/* Hover Tooltip */}
-                  <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none bg-black/90 border border-white/20 text-white text-[11px] py-1 px-2.5 rounded-lg whitespace-nowrap z-10 shadow-xl flex flex-col items-center">
-                    <span className="font-semibold text-white">{count.toLocaleString()} clicks</span>
-                    {fullDateStr && <span className="text-[9px] text-gray-400">{fullDateStr}</span>}
+                  <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none bg-[#141413] dark:bg-[#1e1e24] text-white text-[11px] py-1.5 px-3 rounded-lg whitespace-nowrap z-20 shadow-xl border border-white/10 flex flex-col items-center">
+                    <span className="font-semibold">{count.toLocaleString()} clicks</span>
+                    {fullDateStr && <span className="text-[9px] text-neutral-400 font-mono">{fullDateStr}</span>}
                   </div>
 
-                  {/* Bar */}
+                  {/* Relative Bar */}
                   <div
-                    className="w-full bg-gradient-to-t from-white/30 to-white/80 group-hover:from-white/50 group-hover:to-white rounded-t-md transition-all duration-300 relative"
+                    className="w-full bg-[#141413] dark:bg-emerald-500/80 group-hover:bg-emerald-600 dark:group-hover:bg-emerald-400 rounded-t-lg transition-all duration-200 relative"
                     style={{ height: `${heightPercent}%` }}
                   >
-                    {/* Count overlay label for bars */}
                     {count > 0 && (
-                      <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-gray-300 font-medium opacity-80 group-hover:opacity-100">
+                      <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-mono text-[#6e6d66] dark:text-[#8e8d86] font-semibold opacity-80 group-hover:opacity-100">
                         {count}
                       </span>
                     )}
@@ -160,7 +160,7 @@ export default function Last7DaysBarGraph({ id, className = "" }: Last7DaysBarGr
           </div>
 
           {/* Day Labels */}
-          <div className="flex justify-between mt-4 text-xs font-medium text-gray-400 tracking-wider">
+          <div className="flex justify-between mt-4 pt-2 border-t border-[#e6e3da] dark:border-[#232329] text-[11px] font-mono text-[#6e6d66] dark:text-[#8e8d86]">
             {dailyData.map((item, i) => (
               <span key={i} className="flex-1 text-center truncate px-0.5">
                 {formatDayLabel(item.day || item.Day, i)}

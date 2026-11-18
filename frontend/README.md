@@ -7,12 +7,15 @@
 ## 🌟 Key Features
 
 ### 1. 🔐 User Authentication & Authorization
-- **Cookie-based JWT Authentication**: Secure login and signup flows with password hashing and HTTP-only cookies (`AuthFilter`, `SecurityConfig`).
+- **Cookie-based JWT Authentication**: Secure credential and Google OAuth2 login/signup with HTTP-only cookies; accounts are matched by normalized email and OAuth accounts can add password login from dashboard settings.
 - **Protected Dashboard**: Client-side and server-side route protection ensuring unauthenticated users are redirected to login.
 - **Session Management**: Persistent auth state with automatic `/user/me` verification.
 
 ### 2. ⚡ Fast URL Shortening & Management
 - **Custom & Auto Short Codes**: Generate short links instantaneously for long URLs.
+- **Custom-code availability**: Redis Bloom-filter membership plus an authoritative database uniqueness check.
+- **Optional expiry**: Set an expiry date at creation; expired links return HTTP 410 and no longer redirect.
+- **Unique visitors**: Approximate per-link unique visitor counts use Redis HyperLogLog and store hashed visitor identifiers.
 - **QR Code Generation**: Automatically generates crisp SVG QR codes for every shortened URL using ZXing (`com.google.zxing`) and `qrcode.react`.
 - **Link Copy & Share**: One-click link copying to clipboard with visual feedback notifications.
 - **URL Security Options**: Support for password-protected links and custom redirection configurations.
@@ -96,12 +99,16 @@
 | `POST` | `/user/signup` | Register a new user account | No |
 | `POST` | `/user/login` | Authenticate user and issue JWT cookie | No |
 | `GET` | `/user/me` | Retrieve authenticated user profile | Yes |
+| `POST` | `/user/logout` | Revoke the current refresh token and clear auth cookies | Yes |
 
 ### URL Mapping Controller (`/mapping`)
 | Method | Endpoint | Description | Auth Required |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/mapping/create` | Create a shortened URL | Yes |
-| `GET` | `/mapping/user/{userId}` | Fetch all URL mappings for user | Yes |
+| `POST` | `/mapping/shorten` | Create a shortened URL for the current user | Yes |
+| `GET` | `/mapping/short-code/availability?code={code}` | Check a custom short code | Yes |
+| `GET` | `/mapping/user` | Fetch the current user's mappings | Yes |
+| `GET` | `/mapping/{mappingId}` | Fetch an owned mapping | Yes |
+| `DELETE` | `/mapping/{mappingId}` | Delete an owned mapping | Yes |
 | `GET` | `/mapping/{id}/country/` | Breakdown analytics by country | Yes |
 | `GET` | `/mapping/{id}/device/` | Breakdown analytics by device | Yes |
 | `GET` | `/mapping/{id}/platform/` | Breakdown analytics by platform | Yes |
@@ -109,13 +116,13 @@
 ### Analytics Controller (`/analytic`)
 | Method | Endpoint | Description | Auth Required |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/analytic/summary/{mappingId}` | Summary metrics (Total clicks, top location, top device) | Yes |
+| `GET` | `/analytic/summary/{mappingId}` | Click metrics and approximate unique visitors | Yes |
 | `GET` | `/analytic/7Day/{mappingId}` | 7-day daily click count analysis for bar chart | Yes |
 
 ### Redirection Controller
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `GET` | `/{shortCode}` | Redirect short URL to long URL & log analytics event |
+| `GET` | `/r/{shortCode}` | Redirect or request the password for a protected link |
 
 ---
 
@@ -133,27 +140,29 @@
 
 ### Backend Setup (`Url_Shortener`)
 
-1. **Configure Application Properties**:
-   Ensure `src/main/resources/application.properties` (or YAML) has valid database credentials:
-   ```properties
-   spring.datasource.url=jdbc:postgresql://localhost:5432/urlshortener
-   spring.datasource.username=postgres
-   spring.datasource.password=your_password
-   spring.redis.host=localhost
-   spring.redis.port=6379
-   spring.kafka.bootstrap-servers=localhost:9092
-   ```
+Configure the environment variables listed in [`Url_Shortener/.env.example`](../Url_Shortener/.env.example) before starting the backend. Spring Boot does not load that example file automatically: set those values in your shell or deployment environment. `JWT_SECRET` must be a unique random value of at least 32 bytes. Previously committed database, Redis, OAuth, and signing credentials must be rotated. Google sign-in buttons are available in the frontend; configure valid Google OAuth client credentials and the provider redirect URI on the backend to use them. For cross-site HTTPS deployments set `COOKIE_SECURE=true` and `COOKIE_SAME_SITE=None`, and keep `FRONTEND_ORIGIN` explicit.
 
-2. **Build and Run**:
+### Consolidating existing accounts with duplicate emails
+
+Back up the PostgreSQL database before deploying this account-uniqueness change. Run the one-time, transactional consolidation script from the repository root before starting the updated backend:
+
+```powershell
+psql "$env:DATABASE_URL" -v ON_ERROR_STOP=1 -f .\Url_Shortener\src\main\resources\db\migration\V1__merge_duplicate_user_emails.sql
+```
+
+For each normalized email, the script keeps the password-enabled account when one exists (otherwise the smallest user ID), moves URL mappings and refresh tokens to that account, unions OAuth providers, removes the duplicate user rows, and creates a case-insensitive unique email index. Existing URL mappings, including duplicate destinations, remain available; the backend prevents creating another mapping for the same account and destination.
+
+1. **Configure the environment**:
+   Use `Url_Shortener/.env.example` as a reference and set its variables in your shell or deployment environment. Spring Boot does not load that example file automatically. At minimum, configure the database, Redis, Kafka, `JWT_SECRET`, `BASE_URL`, `BASE_SHORT_URL`, and `FRONTEND_ORIGIN`. Configure Google OAuth credentials and the provider callback URL to enable Google sign-in.
+
+2. **Build and Run** from the repository root:
    ```bash
    cd Url_Shortener
-   mvn clean install
-   mvn spring-boot:run
+   .\mvnw.cmd spring-boot:run
    ```
    The backend server will start at `http://localhost:8080`.
 
 ---
-
 ### Frontend Setup (`frontend`)
 
 1. **Install Dependencies**:
@@ -161,6 +170,7 @@
    cd frontend
    npm install
    ```
+   Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_BACKEND_URL` to the backend origin.
 
 2. **Run Development Server**:
    ```bash
